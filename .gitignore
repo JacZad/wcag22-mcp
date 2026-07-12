@@ -1,0 +1,21 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+
+# OS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
+
+# Build
+wcag-html/
+build_data.py
+sc_map.py
+
+# Embedded repo
+wcag-repo/

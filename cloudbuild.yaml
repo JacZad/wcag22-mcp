@@ -1,0 +1,45 @@
+steps:
+  # Krok 1: Zbuduj dane
+  - name: 'python:3.12-slim'
+    entrypoint: /bin/bash
+    args:
+      - -c
+      - |
+        pip install -r requirements.txt
+        python3 build_data.py
+
+  # Krok 2: Zbuduj obraz runtime
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'europe-central2-docker.pkg.dev/$PROJECT_ID/wcag22/wcag22-mcp:latest'
+      - '-t'
+      - 'europe-central2-docker.pkg.dev/$PROJECT_ID/wcag22/wcag22-mcp:$BUILD_ID'
+      - '.'
+
+  # Krok 3: Push do Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - 'europe-central2-docker.pkg.dev/$PROJECT_ID/wcag22/wcag22-mcp'
+
+  # Krok 4: Deploy na Cloud Run
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - 'wcag22-mcp'
+      - '--image=europe-central2-docker.pkg.dev/$PROJECT_ID/wcag22/wcag22-mcp:latest'
+      - '--region=europe-central2'
+      - '--platform=managed'
+      - '--allow-unauthenticated'
+      - '--memory=512Mi'
+      - '--cpu=1'
+      - '--timeout=600'
+      - '--min-instances=0'
+      - '--max-instances=3'
+      - '--concurrency=10'
+      - '--port=8080'
+
+timeout: '600s'
