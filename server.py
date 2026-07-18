@@ -223,6 +223,116 @@ COUNTS = DATA["counts"]
 SC_ID_TO_SLUG = {sc["id"]: sc["slug"] for sc in SCS.values()}
 SLUG_TO_SC_ID = {sc["slug"]: sc["id"] for sc in SCS.values()}
 
+# Polish SC titles (from WCAG 2.2 PL translation)
+SC_PL = {
+    '1.1.1': 'Treść nietekstowa',
+    '1.2.1': 'Tylko audio i tylko wideo (nagrane)',
+    '1.2.2': 'Napisy rozszerzone (nagrane)',
+    '1.2.3': 'Audiodeskrypcja lub alternatywa medialna (nagrana)',
+    '1.2.4': 'Napisy rozszerzone (na żywo)',
+    '1.2.5': 'Audiodeskrypcja (nagrana)',
+    '1.2.6': 'Język migowy (nagrany)',
+    '1.2.7': 'Rozszerzona audiodeskrypcja (nagrana)',
+    '1.2.8': 'Alternatywa medialna (nagrana)',
+    '1.2.9': 'Tylko audio (na żywo)',
+    '1.3.1': 'Informacje i relacje',
+    '1.3.2': 'Znacząca kolejność',
+    '1.3.3': 'Cechy sensoryczne',
+    '1.3.4': 'Orientacja',
+    '1.3.5': 'Określenie przeznaczenia danych wejściowych',
+    '1.3.6': 'Określenie przeznaczenia',
+    '1.4.1': 'Użycie koloru',
+    '1.4.2': 'Kontrola odtwarzania dźwięku',
+    '1.4.3': 'Kontrast (minimum)',
+    '1.4.4': 'Zmiana rozmiaru tekstu',
+    '1.4.5': 'Obrazy tekstu',
+    '1.4.6': 'Kontrast (wzmocniony)',
+    '1.4.7': 'Niski lub brak dźwięku w tle',
+    '1.4.8': 'Prezentacja wizualna',
+    '1.4.9': 'Obrazy tekstu (bez wyjątku)',
+    '1.4.10': 'Przepływ',
+    '1.4.11': 'Kontrast elementów nietekstowych',
+    '1.4.12': 'Odstępy w tekście',
+    '1.4.13': 'Treść po najechaniu lub fokusie',
+    '2.1.1': 'Klawiatura',
+    '2.1.2': 'Brak pułapki na klawiaturę',
+    '2.1.3': 'Klawiatura (bez wyjątku)',
+    '2.1.4': 'Skróty klawiszowe',
+    '2.2.1': 'Możliwość dostosowania czasu',
+    '2.2.2': 'Zatrzymaj, wstrzymaj, ukryj',
+    '2.2.3': 'Brak ograniczenia czasowego',
+    '2.2.4': 'Przerywanie',
+    '2.2.5': 'Ponowne uwierzytelnianie',
+    '2.2.6': 'Przekroczenie czasu',
+    '2.3.1': 'Trzy błyski lub poniżej progu',
+    '2.3.2': 'Trzy błyski',
+    '2.3.3': 'Animacje wywołane interakcją',
+    '2.4.1': 'Pomijanie bloków',
+    '2.4.2': 'Tytuł strony',
+    '2.4.3': 'Kolejność fokusa',
+    '2.4.4': 'Cel linku (w kontekście)',
+    '2.4.5': 'Wiele sposobów',
+    '2.4.6': 'Nagłówki i etykiety',
+    '2.4.7': 'Widoczny fokus',
+    '2.4.8': 'Położenie',
+    '2.4.9': 'Cel linku (tylko link)',
+    '2.4.10': 'Nagłówki sekcji',
+    '2.4.11': 'Fokus nieprzesłonięty (minimum)',
+    '2.4.12': 'Fokus nieprzesłonięty (wzmocniony)',
+    '2.4.13': 'Wygląd fokusa',
+    '2.5.1': 'Gesty wskaźnika',
+    '2.5.2': 'Anulowanie wskaźnika',
+    '2.5.3': 'Etykieta w nazwie',
+    '2.5.4': 'Aktywacja ruchem',
+    '2.5.5': 'Wielkość celu (wzmocniona)',
+    '2.5.6': 'Równoczesne mechanizmy wejściowe',
+    '2.5.7': 'Przeciąganie',
+    '2.5.8': 'Wielkość celu (minimum)',
+    '3.1.1': 'Język strony',
+    '3.1.2': 'Język części',
+    '3.1.3': 'Nietypowe słowa',
+    '3.1.4': 'Skróty',
+    '3.1.5': 'Poziom czytania',
+    '3.1.6': 'Wymowa',
+    '3.2.1': 'Po otrzymaniu fokusa',
+    '3.2.2': 'Po otrzymaniu danych',
+    '3.2.3': 'Spójna nawigacja',
+    '3.2.4': 'Spójne oznaczanie',
+    '3.2.5': 'Zmiana na żądanie',
+    '3.2.6': 'Spójna pomoc',
+    '3.3.1': 'Identyfikacja błędu',
+    '3.3.2': 'Etykiety lub instrukcje',
+    '3.3.3': 'Sugestia korekty błędu',
+    '3.3.4': 'Zapobieganie błędom (prawnym, finansowym, danych)',
+    '3.3.5': 'Pomoc',
+    '3.3.6': 'Zapobieganie błędom (wszystkim)',
+    '3.3.7': 'Wielokrotne wprowadzanie',
+    '3.3.8': 'Dostępna autoryzacja (minimum)',
+    '3.3.9': 'Dostępna autoryzacja (wzmocniona)',
+    '4.1.1': 'Parsowanie (nieaktualne i usunięte)',
+    '4.1.2': 'Nazwa, rola, wartość',
+    '4.1.3': 'Komunikaty o stanie',
+}
+
+
+def _relative_luminance(hex_color):
+    """Calculate relative luminance per WCAG 2.1 formula."""
+    hex_color = hex_color.lstrip('#')
+    r, g, b = int(hex_color[0:2], 16), int(hex_color[2:4], 16), int(hex_color[4:6], 16)
+    def linearize(v):
+        v = v / 255.0
+        return v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4
+    return 0.2126 * linearize(r) + 0.7152 * linearize(g) + 0.0722 * linearize(b)
+
+
+def _contrast_ratio(hex1, hex2):
+    """Calculate contrast ratio between two hex colors."""
+    l1 = _relative_luminance(hex1)
+    l2 = _relative_luminance(hex2)
+    lighter = max(l1, l2)
+    darker = min(l1, l2)
+    return (lighter + 0.05) / (darker + 0.05)
+
 
 def _resolve(identifier):
     """Resolve '1.1.1' or 'non-text-content' to an SC ID."""
@@ -276,8 +386,12 @@ def get_sc(identifier: str) -> str:
         return f"SC '{identifier}' not found. Try list_scs() to see all."
     
     sc = SCS[sc_id]
+    pl_title = SC_PL.get(sc_id, '')
+    title_line = f"# {sc['id']} — {sc['title']}"
+    if pl_title:
+        title_line += f"  |  {pl_title}"
     lines = [
-        f"# {sc['id']} — {sc['title']}",
+        title_line,
         f"**Level:** {sc.get('level', '')}  **Version:** {sc.get('version', '')}",
         f"**Principle:** {sc.get('principle', '')}  **Guideline:** {sc.get('guideline', '')}",
         "",
@@ -330,18 +444,23 @@ def get_definition(term: str) -> str:
 
 
 @mcp.tool()
-def get_techniques(identifier: str) -> str:
+def list_techniques(identifier: str) -> str:
     """
-    Get techniques for a WCAG 2.2 success criterion.
+    List techniques for a WCAG 2.2 success criterion.
     
     Examples: "1.1.1", "bypass-blocks", "2.4.7"
-    Returns a list of sufficient/advisory techniques and common failures.
+    Returns technique IDs with category and type.
+    Use get_technique(id) for full content of a specific technique.
     """
     sc_id = _resolve(identifier) or identifier
     sc = SCS.get(sc_id, {})
     
     title = f"{sc.get('id', '')} — {sc.get('title', identifier)}" if sc else identifier
-    header = f"# Techniques for {title}\n"
+    pl_title = SC_PL.get(sc_id, '')
+    header = f"# Techniques for {title}"
+    if pl_title:
+        header += f"  |  {pl_title}"
+    header += "\n"
     
     tech_ids = INDEXES.get("tech_by_sc", {}).get(sc_id, [])
     failure_ids = INDEXES.get("failures_by_sc", {}).get(sc_id, [])
@@ -373,6 +492,81 @@ def get_techniques(identifier: str) -> str:
     
     lines.append("")
     lines.append(f"📖 Full list: https://www.w3.org/WAI/WCAG22/Techniques/")
+    lines.append("")
+    lines.append("💡 Use `get_technique(\"GXXX\")` to view the full content of a specific technique.")
+    
+    return "\n".join(lines)
+
+
+@mcp.tool()
+def get_technique(technique_id: str) -> str:
+    """
+    Get the full content of a specific WCAG technique by its ID.
+    
+    Examples: "G103", "H2", "F3", "SL28"
+    Returns the full technique description, applicability, examples, and tests.
+    """
+    tid = technique_id.strip()
+    tech = TECHNIQUES.get(tid)
+    if not tech:
+        # Try without leading @@
+        for k, v in TECHNIQUES.items():
+            if k.endswith(tid):
+                tech = v
+                tid = k
+                break
+    if not tech:
+        return f"Technique '{technique_id}' not found."
+    
+    lines = [
+        f"# {tid}",
+        f"**Category:** {tech.get('category', '')}",
+        f"**Type:** {tech.get('type', '')}",
+        "",
+    ]
+    if tech.get("applies_to"):
+        lines.append(f"**Applies to:** {', '.join(tech['applies_to'])}")
+        lines.append("")
+    
+    content = tech.get("content_md", "")
+    if content:
+        lines.append(content)
+    
+    return "\n".join(lines)
+
+
+@mcp.tool()
+def check_contrast(foreground: str, background: str) -> str:
+    """
+    Calculate WCAG contrast ratio between two hex colors.
+    
+    Examples: check_contrast("#047857", "#FFFFFF"), check_contrast("000000", "fff")
+    Returns contrast ratio and pass/fail for AA and AAA levels.
+    """
+    fg = foreground.lstrip('#')
+    bg = background.lstrip('#')
+    
+    for name, val in [("foreground", fg), ("background", bg)]:
+        if not re.match(r'^[0-9A-Fa-f]{6}$', val):
+            return f"Invalid {name} color '{foreground}'. Use 6-digit hex (e.g. #047857 or 047857)."
+    
+    ratio = _contrast_ratio(f'#{fg}', f'#{bg}')
+    
+    lines = [
+        f"# Kontrast: {ratio:.2f}:1",
+        f"",
+        f"| Foreground | `#{fg.upper()}` |",
+        f"| Background | `#{bg.upper()}` |",
+        f"| Ratio | **{ratio:.2f}:1** |",
+        f"",
+        f"## Wynik (WCAG 2.2)",
+        f"| Poziom | Normal text (≥4.5:1) | Large text (≥3:1) |",
+        f"|---|---|---|",
+        f"| **AA** | {'✅' if ratio >= 4.5 else '❌'} {ratio:.2f}:1 | {'✅' if ratio >= 3 else '❌'} {ratio:.2f}:1 |",
+        f"| **AAA** | {'✅' if ratio >= 7 else '❌'} {ratio:.2f}:1 | {'✅' if ratio >= 4.5 else '❌'} {ratio:.2f}:1 |",
+        f"",
+        f"*Large text = bold ≥14pt or regular ≥18pt (≈18.66px CSS).*",
+    ]
     
     return "\n".join(lines)
 
@@ -383,6 +577,7 @@ def get_failures(identifier: str) -> str:
     Get common failures for a WCAG 2.2 success criterion.
     
     Examples: "1.3.2", "focus-visible", "2.4.7"
+    Returns a list of failure IDs. Use get_technique(id) for full content.
     """
     sc_id = _resolve(identifier) or identifier
     sc = SCS.get(sc_id, {})
@@ -605,11 +800,13 @@ def status() -> str:
         f"**Data size:** {os.path.getsize(DATA_PATH) / 1024:.0f} KB\n"
         f"\n"
         f"### Tools\n"
-        f"- `get_sc(identifier)` — Get a success criterion\n"
-        f"- `get_definition(term)` — Get a term definition\n"
-        f"- `get_techniques(identifier)` — Get techniques for an SC\n"
+        f"- `get_sc(identifier)` — Get a success criterion (with Polish titles)\n"
+        f"- `list_techniques(identifier)` — List techniques for an SC\n"
+        f"- `get_technique(technique_id)` — Get full content of a technique\n"
         f"- `get_failures(identifier)` — Get failures for an SC\n"
+        f"- `get_definition(term)` — Get a term definition\n"
         f"- `get_understanding(identifier)` — Get understanding doc\n"
+        f"- `check_contrast(foreground, background)` — Check WCAG contrast ratio\n"
         f"- `get_principle(id)` — Get a principle (1-4)\n"
         f"- `get_guideline(id)` — Get a guideline (e.g. 2.4)\n"
         f"- `list_scs(level)` — List SCs, filter by A/AA/AAA\n"
