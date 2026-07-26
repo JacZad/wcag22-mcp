@@ -1,0 +1,2638 @@
+{
+  "accordion": {
+    "name": "Accordion (rozwijane sekcje)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/accordion/",
+    "first_rule_of_aria": "Zanim zbudujesz accordion z ARIA, sprawdź czy wystarczą natywne <details>/<summary>",
+    "native_alternatives": [
+      {
+        "html": "<details>\n  <summary>Tytuł sekcji</summary>\n  <p>Treść sekcji rozwijana po kliknięciu tytułu.</p>\n</details>\n<details>\n  <summary>Druga sekcja</summary>\n  <p>Treść drugiej sekcji.</p>\n</details>",
+        "when": "Gdy potrzebujesz prostego accordiona bez zaawansowanych animacji, gdzie każda sekcja otwiera się niezależnie",
+        "benefits": "Wbudowane: toggle rozwijania, role disclosure, obsługa Enter/Spacji, zarządzanie stanem expanded"
+      },
+      {
+        "html": "<details open>\n  <summary>Sekcja domyślnie otwarta</summary>\n  <p>Dodaj atrybut open do <details> aby domyślnie otworzyć sekcję.</p>\n</details>",
+        "when": "Gdy chcesz, aby konkretna sekcja była domyślnie otwarta (np. pierwsza)",
+        "benefits": "Atrybut open HTML działa bez JavaScriptu, czytniki ogłaszają stan expanded/collapsed automatycznie"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz zaawansowanych animacji przy rozwijaniu/zwijaniu (np. płynne przejścia CSS)",
+      "Potrzebujesz trybu 'tylko jedna sekcja otwarta' (exclusive accordion) z zapamiętywaniem stanu",
+      "Potrzebujesz rozwijanych sekcji w strukturach, które nie są semantycznymi listami"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "1.4.11",
+      "2.1.1",
+      "2.1.2",
+      "2.4.11",
+      "2.4.12",
+      "2.4.13",
+      "2.4.3",
+      "2.4.6",
+      "2.4.7",
+      "2.5.3",
+      "2.5.8",
+      "3.2.1",
+      "3.2.2",
+      "4.1.2"
+    ],
+    "roles": {
+      "przycisk nagłówka": "button",
+      "panel treści": "region (lub brak, gdy sekcja jest zamknięta)"
+    },
+    "required_attributes": {
+      "przycisk nagłówka": [
+        "aria-expanded",
+        "aria-controls=<id-panelu>"
+      ],
+      "panel treści": [
+        "aria-labelledby=<id-przycisku> (gdy role=region)"
+      ]
+    },
+    "optional_attributes": {
+      "przycisk nagłówka": [],
+      "panel treści": []
+    },
+    "states": {
+      "aria-expanded": "true gdy panel otwarty, false gdy zamknięty"
+    },
+    "keyboard": [
+      "Tab — focus wchodzi do accordiona, przechodzi między nagłówkami sekcji",
+      "Enter / Spacja — otwiera/zamyka sekcję, gdy focus na nagłówku",
+      "↓ / ↑ (opcjonalnie) — przechodzi między nagłówkami sekcji",
+      "Home / End (opcjonalnie) — przechodzi do pierwszego/ostatniego nagłówka"
+    ],
+    "focus_management": [
+      "Po otwarciu: fokus pozostaje na nagłówku — panel się otwiera, ale focus nie wskakuje do środka",
+      "Po zamknięciu: fokus na nagłówku zamkniętej sekcji",
+      "Tab wchodzi do accordiona: fokus na pierwszym nagłówku",
+      "Tab wychodzi z accordiona: fokus na następnym elemencie poza accordionem",
+      "W trybie exclusive (jedna sekcja): otwarcie jednej zamyka pozostałe automatycznie"
+    ],
+    "techniques": [
+      "ARIA14",
+      "ARIA16",
+      "H98",
+      "SCR37",
+      "F107"
+    ]
+  },
+  "breadcrumb": {
+    "name": "Breadcrumb (ścieżka nawigacyjna)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/breadcrumb/",
+    "first_rule_of_aria": "Zanim zbudujesz breadcrumb z ARIA, sprawdź czy wystarczy lista <ol> z CSS-em",
+    "native_alternatives": [
+      {
+        "html": "<nav aria-label=\"Jesteś tutaj\">\n  <ol>\n    <li><a href=\"/\">Strona główna</a></li>\n    <li><a href=\"/produkty\">Produkty</a></li>\n    <li><a href=\"/produkty/laptopy\" aria-current=\"page\">Laptopy</a></li>\n  </ol>\n</nav>",
+        "when": "Zawsze — breadcrumb prawie nigdy nie wymaga custom ARIA, wystarczy <nav aria-label> + <ol> + <li> + <a>",
+        "benefits": "HTML-semantyka: nav → list → linki, aria-current=\"page\" wskazuje aktualną stronę, czytnik ogłasza 'ścieżka nawigacyjna' + liczbę elementów"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Nigdy — breadcrumb nie wymaga custom ARIA. HTML + CSS w pełni wystarcza",
+      "(To pole istnieje jako reminder: nie kombinuj z ARIA tam, gdzie HTML działa)"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "2.1.1",
+      "2.1.2",
+      "2.4.3",
+      "2.4.5",
+      "2.4.8",
+      "4.1.2"
+    ],
+    "roles": {
+      "kontener": "nav (aria-label=\"Jesteś tutaj\" lub podobne)",
+      "lista": "list (ol)",
+      "element listy": "listitem (li)",
+      "link": "link (a)",
+      "bieżąca strona": "aria-current=\"page\""
+    },
+    "required_attributes": {
+      "nav": [
+        "aria-label"
+      ],
+      "li": [],
+      "a": [],
+      "bieżąca strona": [
+        "aria-current=\"page\""
+      ]
+    },
+    "optional_attributes": {
+      "nav": [],
+      "li": [],
+      "a": [],
+      "bieżąca strona": []
+    },
+    "states": {},
+    "keyboard": [
+      "Tab — przechodzi między linkami w breadcrumb",
+      "Shift+Tab — przechodzi wstecz między linkami",
+      "Enter — aktywuje link",
+      "Breadcrumb nie ma custom interakcji — to nawigacja jak każda lista linków"
+    ],
+    "focus_management": [
+      "Breadcrumb działa jak każda lista linków — standardowy Tab/Shift+Tab",
+      "aria-current=\"page\" informuje czytnik, że to aktualna strona (link nieklikalny lub do odświeżenia)",
+      "Użyj aria-label na <nav> aby odróżnić breadcrumb od innych nawigacji (np. 'Jesteś tutaj', 'Breadcrumb')"
+    ],
+    "techniques": [
+      "G65",
+      "G127",
+      "H97"
+    ]
+  },
+  "button": {
+    "name": "Button (przycisk)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/button/",
+    "first_rule_of_aria": "Zanim zbudujesz custom button z ARIA, sprawdź czy wystarczy natywny <button> lub <input type=\"button\">",
+    "native_alternatives": [
+      {
+        "html": "<button type=\"button\" onclick=\"doSomething()\">\n  📥 Pobierz raport\n</button>\n\n<button type=\"submit\" class=\"primary\">\n  Wyślij formularz\n</button>",
+        "when": "Zawsze — <button> obsługuje wszystko: kliknięcie, focus, klawiaturę (Enter/Spacja), role=button, disabled, formularze",
+        "benefits": "Natywny button ma wbudowaną obsługę: focusu z Tab, aktywacji Enter/Spacją, roli button, stanu disabled, aria-disabled, pseudoklas :focus-visible"
+      },
+      {
+        "html": "<a href=\"/produkty\" role=\"button\" class=\"btn\">Zobacz produkty</a>",
+        "when": "Gdy z przyczyn wizualnych potrzebujesz przycisku, który jest linkiem (przenosi do innej lokalizacji)",
+        "benefits": "Użyj role=\"button\" tylko gdy <a> zachowuje się jak przycisk (wywołuje akcję JS, NIE nawiguje), w przeciwnym razie zachowaj <a>"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz niestandardowego elementu, który nie jest <button>, <input type=\"button\"> ani <a>",
+      "Budujesz przycisk z <div> lub <span> dla celów wizualnych (wtedy dodaj role=\"button\", tabindex=\"0\", obsługę Enter/Spacji)",
+      "Potrzebujesz przycisku toggle z aria-pressed (przycisk przełączający stan)"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "1.3.6",
+      "1.4.1",
+      "1.4.11",
+      "1.4.3",
+      "1.4.6",
+      "2.1.1",
+      "2.1.2",
+      "2.4.11",
+      "2.4.13",
+      "2.4.3",
+      "2.4.7",
+      "2.5.3",
+      "2.5.5",
+      "2.5.8",
+      "4.1.2",
+      "4.1.3"
+    ],
+    "roles": {
+      "przycisk": "button",
+      "przycisk toggle": "button + aria-pressed"
+    },
+    "required_attributes": {
+      "button (z <div>/<span>)": [
+        "role=\"button\"",
+        "tabindex=\"0\" (jeśli nie jest natywnie focusable)"
+      ],
+      "button toggle": [
+        "aria-pressed=\"true|false\""
+      ],
+      "button (<button>/<input>)": []
+    },
+    "optional_attributes": {
+      "button": [
+        "aria-disabled (zamiast atrybutu disabled, gdy przycisk ma pozostać focusable)",
+        "aria-label",
+        "aria-labelledby",
+        "aria-describedby"
+      ],
+      "button toggle": []
+    },
+    "states": {
+      "aria-pressed": "true/false/mixed — stan przycisku toggle",
+      "aria-disabled": "true gdy przycisk nieaktywny ale focusable (lepsze niż disabled dla czytników)",
+      "disabled": "true gdy przycisk nieaktywny i ma być pomijany w taborderze"
+    },
+    "keyboard": [
+      "Tab — focus wchodzi na przycisk",
+      "Enter / Spacja — aktywuje przycisk",
+      "Shift+Tab — focus wychodzi z przycisku",
+      "Enter/Spacja NIE różnią się znaczeniem — oba aktywują (w przeciwieństwie do linku, gdzie Enter nawiguje)"
+    ],
+    "focus_management": [
+      "Focus wchodzi na przycisk standardowo przez Tab — przynajmniej jeden widoczny wskaźnik fokusu",
+      "Po aktywacji: focus zostaje na przycisku (chyba że akcja go przenosi)",
+      "Jeśli przycisk otwiera menu/dialog: focus idzie do otwartego elementu",
+      "Jeśli przycisk zamyka dialog: focus wraca do przycisku który go otworzył",
+      "Dla przycisków toggle: aria-pressed zmienia się po kliknięciu, focus zostaje na przycisku"
+    ],
+    "techniques": [
+      "ARIA14",
+      "H91",
+      "F68",
+      "F107",
+      "G199"
+    ]
+  },
+  "carousel": {
+    "name": "Carousel (karuzela)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/carousel/",
+    "first_rule_of_aria": "Zanim zbudujesz karuzelę z ARIA, sprawdź czy w ogóle potrzebujesz karuzeli — użytkownicy rzadko z nich korzystają",
+    "native_alternatives": [
+      {
+        "html": "<section aria-roledescription=\"karuzela\" aria-label=\"Promocje tygodnia\">\n  <h2>Promocje tygodnia</h2>\n  <div aria-live=\"polite\" aria-atomic=\"false\">\n    <div role=\"group\" aria-roledescription=\"slajd\" aria-label=\"1 z 5\">\n      <img src=\"produkt1.jpg\" alt=\"Laptop XYZ - 20% taniej\">\n    </div>\n  </div>\n  <button aria-label=\"Poprzedni slajd\">‹</button>\n  <button aria-label=\"Następny slajd\">›</button>\n</section>",
+        "when": "Gdy naprawdę musisz mieć karuzelę (ważne treści, rotacja z pauzą)",
+        "benefits": "aria-roledescription='karuzela' nadaje kontekst, aria-live='polite' ogłasza zmiany, aria-label na slajdach podaje pozycję"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Nie ma dobrego powodu na custom ARIA w karuzeli — użyj standardowych wzorców (tablist, region) z odpowiednimi roledescription",
+      "Jeśli slajdy mają linki/buttony: karuzela musi być operowalna z klawiatury (ale to nie wymaga custom ARIA)"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "1.4.13",
+      "2.1.1",
+      "2.1.2",
+      "2.2.1",
+      "2.2.2",
+      "2.3.1",
+      "2.3.2",
+      "2.4.11",
+      "2.4.13",
+      "2.4.3",
+      "2.4.7",
+      "2.5.1",
+      "2.5.5",
+      "2.5.8",
+      "3.2.1",
+      "4.1.2"
+    ],
+    "roles": {
+      "kontener karuzeli": "region z aria-roledescription=\"karuzela\"",
+      "slajd": "group z aria-roledescription=\"slajd\" i aria-label=\"N z M\"",
+      "przyciski nawigacji": "button",
+      "wskaźniki slajdów": "button z aria-label"
+    },
+    "required_attributes": {
+      "kontener": [
+        "aria-roledescription=\"karuzela\"",
+        "aria-label"
+      ],
+      "slajd": [
+        "role=\"group\"",
+        "aria-roledescription=\"slajd\"",
+        "aria-label=\"N z M\""
+      ],
+      "przyciski nawigacji": [
+        "aria-label"
+      ]
+    },
+    "optional_attributes": {
+      "kontener": [
+        "aria-live=\"polite\" (dla automatycznej rotacji)",
+        "aria-atomic"
+      ],
+      "slajd": [],
+      "przyciski nawigacji": []
+    },
+    "states": {
+      "aria-hidden": "true dla nieaktywnych slajdów (niewidocznych dla czytnika)"
+    },
+    "keyboard": [
+      "Tab — wchodzi do karuzeli, przechodzi między kontrolkami",
+      "←/→ — (opcjonalnie) przechodzi między slajdami, gdy focus na karuzeli",
+      "Play/Pause — Spacja na przycisku pauzy (automatyczna rotacja)",
+      "Escape — zatrzymuje autoodtwarzanie (jeśli karuzela automatyczna)",
+      "Przyciski Poprzedni/Następny — Enter/Spacja"
+    ],
+    "focus_management": [
+      "Focus wchodzi na pierwszy element interaktywny w karuzeli (zwykle przycisk pauzy lub nawigacji)",
+      "Gdy slajd zmienia się automatycznie: NIE ruszaj fokusu — użyj aria-live do ogłoszenia zmiany",
+      "Gdy użytkownik ręcznie zmieni slajd: fokus pozostaje na przycisku nawigacji",
+      "Jeśli slajd zawiera linki: użytkownik musi do nich dojść Tabem — karuzela nie blokuje nawigacji",
+      "Automatyczna rotacja: musi mieć przycisk pauzy (2.2.2)"
+    ],
+    "techniques": [
+      "G4",
+      "G60",
+      "G151",
+      "H76",
+      "SCR21",
+      "F107"
+    ]
+  },
+  "checkbox": {
+    "name": "Checkbox (pole wyboru)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/checkbox/",
+    "first_rule_of_aria": "Zanim zbudujesz checkbox z ARIA, sprawdź czy wystarczy natywny <input type=\"checkbox\"> z <label>",
+    "native_alternatives": [
+      {
+        "html": "<label>\n  <input type=\"checkbox\" name=\"newsletter\" checked>\n  Zapisz się do newslettera\n</label>\n\n<fieldset>\n  <legend>Ulubione kolory</legend>\n  <label><input type=\"checkbox\" name=\"color\" value=\"red\"> Czerwony</label>\n  <label><input type=\"checkbox\" name=\"color\" value=\"blue\"> Niebieski</label>\n</fieldset>",
+        "when": "Zawsze gdy potrzebujesz pojedynczego pola wyboru lub grupy pól",
+        "benefits": "Natywny checkbox: wbudowana obsługa klawiatury (Spacja), focus, rola checkbox, stan checked/indeterminate, formularze, walidacja"
+      },
+      {
+        "html": "<label>\n  <input type=\"checkbox\" name=\"agree\" required\n         onchange=\"this.setCustomValidity(this.checked?'':'Musisz zaakceptować regulamin')\">\n  Akceptuję regulamin\n</label>",
+        "when": "Gdy checkbox wymaga walidacji (np. obowiązkowy do zaakceptowania)",
+        "benefits": "HTML5 validation + setCustomValidity — brak custom ARIA"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz niestandardowego wyglądu checkboxa, którego nie da się osiągnąć przez CSS + appearance: none",
+      "Budujesz tri-state checkbox (checked / unchecked / partially checked) — ale i tak <input> z JS-em wystarczy",
+      "Potrzebujesz checkboxa w focus trap lub jako część widgetu (np. w drzewie, w siatce)"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "1.3.6",
+      "1.4.1",
+      "1.4.11",
+      "1.4.3",
+      "1.4.6",
+      "2.1.1",
+      "2.1.2",
+      "2.4.11",
+      "2.4.13",
+      "2.4.3",
+      "2.4.6",
+      "2.4.7",
+      "2.5.3",
+      "2.5.8",
+      "3.3.2",
+      "3.3.4",
+      "4.1.2"
+    ],
+    "roles": {
+      "checkbox": "checkbox",
+      "grupa checkboxów": "group (fieldset)"
+    },
+    "required_attributes": {
+      "checkbox (z <div>/<span>)": [
+        "role=\"checkbox\"",
+        "aria-checked",
+        "tabindex=\"0\""
+      ],
+      "checkbox (<input>)": [],
+      "grupa": []
+    },
+    "optional_attributes": {
+      "checkbox": [
+        "aria-label / aria-labelledby (gdy brak widocznej etykiety)",
+        "aria-describedby",
+        "aria-disabled"
+      ],
+      "grupa": [
+        "aria-labelledby (gdy nie ma <legend>)"
+      ]
+    },
+    "states": {
+      "aria-checked": "true / false / mixed (dla tri-state)",
+      "aria-disabled": "true gdy nieaktywny"
+    },
+    "keyboard": [
+      "Tab — focus wchodzi na checkbox",
+      "Spacja — przełącza stan checkboxa (checked/unchecked)",
+      "Shift+Tab — focus wychodzi z checkboxa",
+      "Gdy grupa checkboxów: Tab/SHIFT+Tab przechodzi między nimi, Spacja przełącza każdy z osobna"
+    ],
+    "focus_management": [
+      "Focus na checkboxie: widoczny wskaźnik fokusu (outline lub focus ring)",
+      "Po przełączeniu (Spacja): focus pozostaje na checkboxie, stan się zmienia",
+      "Dla grupy checkboxów: Tab przechodzi między kolejnymi checkboxami",
+      "Tri-state: Spacja cykluje przez 3 stany (unchecked → checked → mixed → unchecked)"
+    ],
+    "techniques": [
+      "ARIA14",
+      "H91",
+      "F68",
+      "F107",
+      "G199"
+    ]
+  },
+  "datepicker": {
+    "name": "Date Picker (wybór daty)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/datepicker/",
+    "first_rule_of_aria": "Zanim zbudujesz date picker z ARIA, sprawdź czy wystarczy natywny <input type=\"date\">",
+    "native_alternatives": [
+      {
+        "html": "<label for=\"birth\">Data urodzenia</label>\n<input type=\"date\" id=\"birth\" min=\"1900-01-01\" max=\"2010-12-31\">\n\n<label for=\"appointment\">Termin wizyty</label>\n<input type=\"datetime-local\" id=\"appointment\" min=\"2025-01-01T09:00\" max=\"2025-12-31T17:00\">",
+        "when": "Gdy potrzebujesz prostego wyboru daty bez rozbudowanych ograniczeń niestandardowych",
+        "benefits": "Natywny date picker: wbudowana obsługa klawiatury, kalendarz w przeglądarce, walidacja min/max, rola brak custom ARIA"
+      },
+      {
+        "html": "<label for=\"month\">Miesiąc</label>\n<input type=\"month\" id=\"month\">\n\n<label for=\"week\">Tydzień</label>\n<input type=\"week\" id=\"week\">\n\n<label for=\"time\">Godzina</label>\n<input type=\"time\" id=\"time\">",
+        "when": "Gdy potrzebujesz wyboru miesiąca, tygodnia, czasu (bez daty) — HTML5 ma osobne type'y",
+        "benefits": "Dedykowane type'y z natywnymi kontrolkami przeglądarki"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz zaawansowanego kalendarza z blokowaniem dni, zakresami dat, dniami wolnymi",
+      "Potrzebujesz wyboru zakresu dat (date range picker)",
+      "Potrzebujesz niestandardowego wyglądu kalendarza, który nie jest wspierany przez natywny picker",
+      "Działasz w środowisku gdzie <input type=\"date\"> nie jest wspierane (starsze przeglądarki)"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "1.3.5",
+      "1.4.1",
+      "1.4.11",
+      "1.4.12",
+      "1.4.3",
+      "1.4.6",
+      "2.1.1",
+      "2.1.2",
+      "2.4.11",
+      "2.4.13",
+      "2.4.3",
+      "2.4.6",
+      "2.4.7",
+      "2.5.3",
+      "2.5.8",
+      "3.2.1",
+      "3.2.2",
+      "3.3.2",
+      "3.3.4",
+      "4.1.2"
+    ],
+    "roles": {
+      "kalendarz": "dialog (lub grid dla widoku tabelarycznego)",
+      "przycisk otwierania": "button",
+      "przyciski nawigacji (miesiąc/rok)": "button",
+      "dni": "button z aria-label",
+      "nagłówki dni tygodnia": "columnheader",
+      "bieżąca data": "button z aria-current=\"date\""
+    },
+    "required_attributes": {
+      "pole tekstowe (opcjonalnie)": [],
+      "przycisk otwierania": [
+        "aria-label=\"Wybierz datę\"",
+        "aria-haspopup=\"dialog\"",
+        "aria-expanded"
+      ],
+      "kalendarz": [
+        "role=\"dialog\"",
+        "aria-label",
+        "aria-modal=\"true\""
+      ],
+      "dni": [
+        "role=\"gridcell\"",
+        "aria-label=\"Nazwa dnia, data\""
+      ]
+    },
+    "optional_attributes": {
+      "kalendarz": [
+        "aria-roledescription=\"date picker\""
+      ],
+      "dni spoza miesiąca": [
+        "aria-disabled=\"true\""
+      ],
+      "wybrany dzień": [
+        "aria-selected=\"true\""
+      ]
+    },
+    "states": {
+      "aria-expanded": "true gdy kalendarz otwarty, false gdy zamknięty",
+      "aria-selected": "true gdy dzień zaznaczony",
+      "aria-current": "date dla bieżącej daty (dzisiaj)",
+      "aria-disabled": "true dla dni zablokowanych (spoza zakresu)"
+    },
+    "keyboard": [
+      "Tab — focus na polu daty (lub przycisku otwierania kalendarza)",
+      "Enter / Spacja — otwiera kalendarz (gdy focus na przycisku / polu)",
+      "Escape — zamyka kalendarz, focus wraca do pola/przycisku",
+      "←/↑/→/↓ — nawigacja między dniami (gdy kalendarz otwarty, focus w gridzie)",
+      "Home — pierwszy dzień miesiąca",
+      "End — ostatni dzień miesiąca",
+      "PageUp — poprzedni miesiąc",
+      "PageDown — następny miesiąc",
+      "Shift+PageUp — poprzedni rok",
+      "Shift+PageDown — następny rok",
+      "Enter / Spacja — wybiera dzień i zamyka kalendarz"
+    ],
+    "focus_management": [
+      "Po otwarciu kalendarza: focus na bieżącej dacie (dzisiaj) lub na ostatnio wybranej dacie",
+      "W kalendarzu: strzałki nawigują między dniami (grid 2D)"
+    ],
+    "techniques": [
+      "ARIA14",
+      "ARIA16",
+      "H91",
+      "SCR27",
+      "SCR31",
+      "F68"
+    ]
+  },
+  "disclosure": {
+    "name": "Disclosure (pokaz/ukryj treść)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/",
+    "first_rule_of_aria": "Zanim zbudujesz disclosure z ARIA, sprawdź czy wystarczy natywny <details>/<summary>",
+    "native_alternatives": [
+      {
+        "html": "<details>\n  <summary>Pokaż szczegóły zamówienia</summary>\n  <dl>\n    <dt>Numer zamówienia</dt><dd>12345</dd>\n    <dt>Status</dt><dd>W realizacji</dd>\n  </dl>\n</details>",
+        "when": "Gdy potrzebujesz prostego pokaż/ukryj dla jednej sekcji",
+        "benefits": "Wbudowane: toggle, rola disclosure, Enter/Spacja, zarządzanie stanem expanded, aria-expanded automatycznie"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz zaawansowanych animacji lub więcej niż jednej sekcji z exclusive mode (tylko jedna otwarta)",
+      "Potrzebujesz disclosure jako części nawigacji (patrz: Navigation Disclosure pattern)",
+      "Potrzebujesz kontroli nad tym, który panel jest otwarty przy ładowaniu strony"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "2.1.1",
+      "2.1.2",
+      "2.4.3",
+      "2.4.6",
+      "2.4.7",
+      "2.5.3",
+      "2.5.8",
+      "3.2.1",
+      "4.1.2"
+    ],
+    "roles": {
+      "przycisk przełączania": "button",
+      "panel treści": "region (gdy panel ma tytuł)"
+    },
+    "required_attributes": {
+      "przycisk": [
+        "aria-expanded",
+        "aria-controls=<id-panelu>"
+      ],
+      "panel": [
+        "aria-labelledby=<id-przycisku> (gdy role=region)"
+      ]
+    },
+    "optional_attributes": {
+      "przycisk": [],
+      "panel": []
+    },
+    "states": {
+      "aria-expanded": "true gdy panel otwarty, false gdy zamknięty"
+    },
+    "keyboard": [
+      "Tab — focus na przycisku disclosure",
+      "Enter / Spacja — przełącza otwarcie/zamknięcie panelu",
+      "Shift+Tab — focus wychodzi z disclosure"
+    ],
+    "focus_management": [
+      "Po otwarciu: focus zostaje na przycisku — panel się rozwija, ale focus nie wskakuje do środka",
+      "Po zamknięciu: focus na przycisku",
+      "Disclosure nie zarządza fokusem wewnątrz panelu — jeśli w panelu są focusable elementy, Tab do nich dociera"
+    ],
+    "techniques": [
+      "ARIA14",
+      "ARIA16",
+      "H98",
+      "F107"
+    ]
+  },
+  "feed": {
+    "name": "Feed (strumień treści)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/feed/",
+    "first_rule_of_aria": "Feed to wzorzec dla dynamicznie ładujących się strumieni treści (social media, news feed)",
+    "native_alternatives": [
+      {
+        "html": "<section aria-label=\"Aktualności\" role=\"feed\">\n  <article aria-posinset=\"1\" aria-setsize=\"-1\" tabindex=\"0\">\n    <h2>Wpis 1</h2>\n    <p>Treść wpisu...</p>\n  </article>\n  <article aria-posinset=\"2\" aria-setsize=\"-1\" tabindex=\"0\">\n    <h2>Wpis 2</h2>\n    <p>Treść wpisu...</p>\n  </article>\n</section>",
+        "when": "Gdy masz dynamicznie ładujący się strumień treści z przewijaniem (np. Twitter, Facebook feed)",
+        "benefits": "role='feed' informuje czytnik, że to strumień — użytkownik może nawigować strzałkami między wpisami bez przechodzenia przez wszystkie linki wewnątrz każdego"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Masz dynamicznie ładujące się treści (infinite scroll) gdzie użytkownik musi szybko przeglądać wpisy",
+      "Twój feed ma zagnieżdżone interakcje (lajki, komentarze, udostępnienia) w każdym wpisie",
+      "Potrzebujesz kontroli nad tym, ile wpisów jest dostępnych jednocześnie dla czytnika"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "2.1.1",
+      "2.1.2",
+      "2.2.1",
+      "2.4.11",
+      "2.4.13",
+      "2.4.3",
+      "2.4.5",
+      "2.4.6",
+      "2.4.7",
+      "3.2.1",
+      "4.1.2"
+    ],
+    "roles": {
+      "feed": "feed",
+      "wpis": "article z aria-posinset i aria-setsize"
+    },
+    "required_attributes": {
+      "feed": [
+        "role=\"feed\"",
+        "aria-label"
+      ],
+      "wpis": [
+        "tabindex=\"0\"",
+        "aria-posinset",
+        "aria-setsize"
+      ]
+    },
+    "optional_attributes": {
+      "feed": [
+        "aria-busy (gdy ładują się nowe wpisy)"
+      ],
+      "wpis": []
+    },
+    "states": {
+      "aria-busy": "true gdy feed ładuje nowe treści"
+    },
+    "keyboard": [
+      "Tab — focus wchodzi do feeda na pierwszy wpis",
+      "↑ / ↓ — przechodzi między wpisami (NIE między linkami wewnątrz)",
+      "PageUp / PageDown — przewija o stałą liczbę wpisów",
+      "Home — pierwszy wpis",
+      "End — ostatni wpis",
+      "Tab (wewnątrz wpisu) — przechodzi między linkami/przyciskami wewnątrz wpisu",
+      "Gdy focus na ostatnim wpisie i nowe treści: załaduj więcej"
+    ],
+    "focus_management": [
+      "Tab wchodzi do feeda na pierwszy wpis — potem strzałki nawigują między wpisami",
+      "Gdy focus na artykule: ↑/↓ przechodzą między wpisami omijając wszystkie elementy wewnątrz",
+      "Gdy focus na ostatnim wpisie: ↓ lub strona niżej ładuje więcej treści",
+      "Tab ze środka wpisu wychodzi na następny wpis (nie na kolejny element poza feedem)"
+    ],
+    "techniques": [
+      "ARIA14",
+      "ARIA16",
+      "H91",
+      "F68"
+    ]
+  },
+  "link": {
+    "name": "Link (odnośnik)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/link/",
+    "first_rule_of_aria": "Zanim zbudujesz custom link z ARIA, sprawdź czy wystarczy natywny <a href=\"...\">",
+    "native_alternatives": [
+      {
+        "html": "<a href=\"/produkty/laptopy\" class=\"card-link\">\n  <h3>Laptop XYZ Pro</h3>\n  <p>Wydajny laptop do pracy biurowej</p>\n  <span class=\"price\">2999 zł</span>\n</a>",
+        "when": "Zawsze — <a href> jest jedynym poprawnym semantycznie elementem dla linków",
+        "benefits": "Natywny link: wbudowana obsługa klawiatury (Enter), rola link, focus, otwieranie w nowej karcie (target=_blank), rel, bookmarkowanie, indeksowanie SEO"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "NIGDY — link nie ma uzasadnionego powodu do używania custom ARIA. <a href> obsługuje wszystko",
+      "Jeśli element nie ma href — to nie jest link. Użyj <button> dla akcji JS",
+      "Jeśli potrzebujesz przejścia do innej lokalizacji — użyj <a href>. Jeśli akcji — <button>"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "2.1.1",
+      "2.1.2",
+      "2.4.3",
+      "2.4.4",
+      "2.4.9",
+      "2.5.3",
+      "2.5.8",
+      "4.1.2"
+    ],
+    "roles": {
+      "link": "link (a href=...)"
+    },
+    "required_attributes": {
+      "link": [
+        "href (lub aria-label gdy link jest obrazkiem)"
+      ],
+      "otwierany w nowej karcie": [
+        "target=\"_blank\" + rel=\"noopener noreferrer\""
+      ]
+    },
+    "optional_attributes": {
+      "link": [
+        "aria-label",
+        "aria-labelledby",
+        "aria-describedby",
+        "aria-current"
+      ]
+    },
+    "states": {
+      "aria-current": "page/step/location/date/time — wskazuje bieżący element w zbiorze"
+    },
+    "keyboard": [
+      "Tab — focus na linku",
+      "Enter — aktywuje link (nawiguje do celu)",
+      "Shift+Tab — focus wychodzi z linku",
+      "Ctrl+Enter / Ctrl+klik — otwiera w nowej karcie (natywne)",
+      "Spacja NIE aktywuje linku (w przeciwieństwie do buttona!) — to kluczowa różnica"
+    ],
+    "focus_management": [
+      "Focus na linku: standardowy outline/wskaźnik fokusu — NIE usuwaj outline:none bez alternatywy",
+      "Po aktywacji: focus przechodzi do celu linku (lub na początek strony, jeśli ten sam dokument)",
+      "Linki 'skip to content' / 'przejdź do treści': focus musi faktycznie iść do celu",
+      "Linki otwierane w nowej karcie: ostrzeżenie dla użytkownika („otwiera się w nowej karcie”)"
+    ],
+    "techniques": [
+      "H91",
+      "F68",
+      "G199",
+      "G124"
+    ]
+  },
+  "listbox": {
+    "name": "Listbox (lista wyboru)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/listbox/",
+    "first_rule_of_aria": "Zanim zbudujesz listbox z ARIA, sprawdź czy wystarczy natywny <select> z <option>",
+    "native_alternatives": [
+      {
+        "html": "<label for=\"country\">Kraj</label>\n<select id=\"country\" size=\"5\">\n  <option>Polska</option>\n  <option>Niemcy</option>\n  <option>Czechy</option>\n  <option>Słowacja</option>\n  <option>Litwa</option>\n</select>\n\n<label for=\"city\">Miasto</label>\n<select id=\"city\" multiple>\n  <option>Warszawa</option>\n  <option>Kraków</option>\n  <option>Gdańsk</option>\n</select>",
+        "when": "Gdy potrzebujesz listy opcji do wyboru (single lub multiple) — select/option obsługuje oba tryby",
+        "benefits": "Wbudowane: rola listbox/option, nawigacja strzałkami, select/multiple, focus, grupowanie optgroup, walidacja"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz niestandardowego wyglądu opcji (ikony, kolory, wielolinijkowe etykiety)",
+      "Potrzebujesz zaawansowanego zaznaczania (Shift+klik zakres, Ctrl+klik pojedyncze, checkbox mode)",
+      "Potrzebujesz grup z możliwością collapse/expand (optymalne: treegrid lub tree)",
+      "Potrzebujesz opcji przeciągania (drag & drop reorder)"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "1.4.1",
+      "1.4.11",
+      "1.4.3",
+      "1.4.6",
+      "2.1.1",
+      "2.1.2",
+      "2.4.11",
+      "2.4.13",
+      "2.4.3",
+      "2.4.6",
+      "2.4.7",
+      "2.5.3",
+      "2.5.8",
+      "3.2.1",
+      "3.2.2",
+      "3.3.2",
+      "4.1.2"
+    ],
+    "roles": {
+      "lista": "listbox",
+      "opcja": "option",
+      "grupa opcji": "group"
+    },
+    "required_attributes": {
+      "listbox": [
+        "aria-label lub aria-labelledby"
+      ],
+      "option": [],
+      "group": [
+        "aria-label"
+      ]
+    },
+    "optional_attributes": {
+      "listbox": [
+        "aria-multiselectable",
+        "aria-activedescendant",
+        "aria-orientation",
+        "aria-required"
+      ],
+      "option": [
+        "aria-selected",
+        "aria-disabled",
+        "aria-posinset",
+        "aria-setsize"
+      ],
+      "group": []
+    },
+    "states": {
+      "aria-selected": "true gdy opcja zaznaczona",
+      "aria-disabled": "true gdy opcja nieaktywna",
+      "aria-multiselectable": "true gdy można zaznaczyć wiele opcji",
+      "aria-activedescendant": "id aktualnie podświetlonej opcji (gdy fokus na listbox)"
+    },
+    "keyboard": [
+      "Tab — focus wchodzi na listbox (na pierwszą lub ostatnio aktywną opcję)",
+      "↑ / ↓ — nawigacja między opcjami",
+      "Spacja — zaznacza/odznacza opcję (w trybie multiple)",
+      "Ctrl+↑/↓ — przesuwa focus bez zmiany zaznaczenia (w trybie multiple)",
+      "Shift+↑/↓ — rozszerza zaznaczenie zakresu (w trybie multiple)",
+      "Ctrl+Spacja — przełącza zaznaczenie pojedynczej opcji (w trybie multiple)",
+      "Home / End — pierwsza / ostatnia opcja",
+      "litery (typeahead) — skacze do opcji zaczynającej się od wpisanych znaków"
+    ],
+    "focus_management": [
+      "Tab wchodzi do listboxa: focus na pierwszej opcji (lub ostatnio aktywnej) — użyj aria-activedescendant",
+      "Po wejściu: strzałki poruszają focus między opcjami (aria-activedescendant lub realny focus)",
+      "Tab wychodzi z listboxa: focus na następnym elemencie, zapamiętaj ostatnią opcję"
+    ],
+    "techniques": [
+      "ARIA14",
+      "ARIA16",
+      "H91",
+      "F68",
+      "F107"
+    ]
+  },
+  "menu": {
+    "name": "Menu / Menu Bar (menu nawigacyjne)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/menu/",
+    "first_rule_of_aria": "Zanim zbudujesz menu z ARIA, sprawdź czy wystarczy natywny <nav> z <ul>/<li>/<a>",
+    "native_alternatives": [
+      {
+        "html": "<nav aria-label=\"Główne menu\">\n  <ul>\n    <li><a href=\"/\">Strona główna</a></li>\n    <li>\n      <a href=\"/produkty\">Produkty</a>\n      <ul>\n        <li><a href=\"/produkty/laptopy\">Laptopy</a></li>\n        <li><a href=\"/produkty/akcesoria\">Akcesoria</a></li>\n      </ul>\n    </li>\n    <li><a href=\"/kontakt\">Kontakt</a></li>\n  </ul>\n</nav>",
+        "when": "Gdy potrzebujesz nawigacji z rozwijanymi podmenu — natywne zagnieżdżone <ul> w <nav> w pełni wystarcza",
+        "benefits": "Nawigacja z listy linków działa ze wszystkimi czytnikami, SEO, keyboard navigation, role nav/list/listitem/link"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz menu aplikacyjnego (desktop-style) z zaawansowaną nawigacją strzałkami (menubar)",
+      "Potrzebujesz menu kontekstowego (prawy przycisk myszy)",
+      "Potrzebujesz roli menuitemcheckbox lub menuitemradio w menu"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "1.4.11",
+      "2.1.1",
+      "2.1.2",
+      "2.4.11",
+      "2.4.13",
+      "2.4.3",
+      "2.4.5",
+      "2.4.6",
+      "2.4.7",
+      "2.4.8",
+      "2.5.3",
+      "2.5.8",
+      "3.2.1",
+      "3.2.2",
+      "4.1.2",
+      "4.1.3"
+    ],
+    "roles": {
+      "pasek menu": "menubar",
+      "menu rozwijane": "menu",
+      "element menu (akcja)": "menuitem",
+      "element menu (checkbox)": "menuitemcheckbox",
+      "element menu (radio)": "menuitemradio",
+      "separator": "separator"
+    },
+    "required_attributes": {
+      "menubar": [
+        "aria-label lub aria-labelledby"
+      ],
+      "menu": [
+        "aria-label lub aria-labelledby"
+      ],
+      "menuitem z podmenu": [
+        "aria-haspopup=\"true\"",
+        "aria-expanded"
+      ],
+      "menuitemcheckbox": [
+        "aria-checked"
+      ],
+      "menuitemradio": [
+        "aria-checked"
+      ]
+    },
+    "optional_attributes": {
+      "menubar/menu": [
+        "aria-orientation"
+      ],
+      "menuitem": [
+        "aria-disabled",
+        "aria-posinset",
+        "aria-setsize"
+      ]
+    },
+    "states": {
+      "aria-expanded": "true gdy podmenu otwarte",
+      "aria-checked": "true/false dla checkbox/radio items",
+      "aria-disabled": "true gdy element menu nieaktywny"
+    },
+    "keyboard": [
+      "Tab — focus wchodzi/wychodzi z menubara (na pierwszy lub ostatnio aktywny item)",
+      "← / → — nawigacja między elementami w menubarze",
+      "↑ / ↓ — otwiera podmenu lub nawiguje w otwartym menu",
+      "Enter / Spacja — aktywuje element menu",
+      "Escape — zamyka otwarte podmenu, focus wraca do rodzica",
+      "Home / End — pierwszy / ostatni element w menubarze lub menu"
+    ],
+    "focus_management": [
+      "Tab wchodzi do menubara: focus na pierwszym (lub ostatnio aktywnym) elemencie",
+      "W menubarze: strzałki ←/→ nawigują między itemami, ↓ otwiera podmenu",
+      "W otwartym menu: strzałki ↑/↓ nawigują, Escape zamyka podmenu",
+      "Po zamknięciu: focus wraca do elementu który otworzył menu",
+      "Tab z menubara wychodzi na następny element poza menubarem"
+    ],
+    "techniques": [
+      "ARIA14",
+      "ARIA16",
+      "H91",
+      "F68",
+      "F107"
+    ]
+  },
+  "menu_button": {
+    "name": "Menu Button (przycisk z menu)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/menu-button/",
+    "first_rule_of_aria": "Zanim zbudujesz menu button z ARIA, sprawdź czy wystarczy natywny <button> + <nav>/<ul> z JS-em",
+    "native_alternatives": [
+      {
+        "html": "<button aria-haspopup=\"true\" aria-expanded=\"false\"\n        aria-controls=\"actions-menu\"\n        onclick=\"toggleMenu()\">\n  Akcje\n</button>\n<ul id=\"actions-menu\" role=\"menu\" hidden>\n  <li role=\"none\"><button role=\"menuitem\">Edytuj</button></li>\n  <li role=\"none\"><button role=\"menuitem\">Usuń</button></li>\n  <li role=\"none\"><button role=\"menuitem\">Duplikuj</button></li>\n</ul>",
+        "when": "Gdy potrzebujesz przycisku, który otwiera listę akcji (drodown menu)",
+        "benefits": "Standardowy wzorzec: button + menu z rolami, aria-haspopup, aria-expanded"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz zagnieżdżonych podmenu w menu button (submenus)",
+      "Potrzebujesz checkbox lub radio items w menu",
+      "Potrzebujesz zaawansowanego pozycjonowania menu (floating UI)"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "2.1.1",
+      "2.1.2",
+      "2.4.11",
+      "2.4.13",
+      "2.4.3",
+      "2.4.7",
+      "2.5.3",
+      "2.5.8",
+      "3.2.1",
+      "3.2.2",
+      "4.1.2",
+      "4.1.3"
+    ],
+    "roles": {
+      "przycisk otwierający": "button",
+      "menu": "menu"
+    },
+    "required_attributes": {
+      "przycisk": [
+        "aria-haspopup=\"true\"",
+        "aria-expanded"
+      ],
+      "menu": [
+        "role=\"menu\"",
+        "aria-label lub aria-labelledby"
+      ]
+    },
+    "optional_attributes": {
+      "przycisk": [
+        "aria-controls"
+      ],
+      "menu": []
+    },
+    "states": {
+      "aria-expanded": "true gdy menu otwarte, false gdy zamknięte"
+    },
+    "keyboard": [
+      "Tab — focus na przycisku",
+      "Enter / Spacja — otwiera menu, focus na pierwszym elemencie",
+      "↓ — otwiera menu (gdy focus na przycisku), focus na pierwszym elemencie",
+      "↑ — otwiera menu, focus na ostatnim elemencie",
+      "↑ / ↓ — nawigacja między elementami menu (gdy menu otwarte)",
+      "Enter / Spacja — aktywuje element menu",
+      "Escape — zamyka menu, focus wraca do przycisku",
+      "Tab (gdy menu otwarte) — zamyka menu, focus na następnym elemencie"
+    ],
+    "focus_management": [
+      "Po otwarciu menu (Enter/Spacja): focus na pierwszym elemencie menu",
+      "Po otwarciu menu (↑): focus na ostatnim elemencie menu",
+      "W menu: strzałki ↑/↓ nawigują, Escape zamyka",
+      "Po zamknięciu: focus wraca do przycisku który otworzył menu"
+    ],
+    "techniques": [
+      "ARIA14",
+      "ARIA16",
+      "H91",
+      "F68"
+    ]
+  },
+  "meter": {
+    "name": "Meter (wskaźnik wartości w zakresie)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/meter/",
+    "first_rule_of_aria": "Zanim zbudujesz meter z ARIA, sprawdź czy wystarczy natywny <meter> lub <progress>",
+    "native_alternatives": [
+      {
+        "html": "<label for=\"battery\">Poziom baterii:</label>\n<meter id=\"battery\" min=\"0\" max=\"100\" low=\"20\" high=\"80\" optimum=\"100\"\n       value=\"75\">75%</meter>\n\n<label for=\"disk\">Użycie dysku:</label>\n<progress id=\"disk\" max=\"1000\" value=\"650\">65%</progress>",
+        "when": "Gdy chcesz wyświetlić wartość w znanym zakresie (meter) lub postęp (progress)",
+        "benefits": "Wbudowane: role meter/progressbar, aria-valuemin/max/now, natywne wsparcie czytników"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz niestandardowego wyglądu wizualnego (wykres kołowy, termometr itp.)",
+      "Potrzebujesz interaktywnego meter (np. z możliwością zmiany wartości przez użytkownika — wtedy to slider)"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "1.4.1",
+      "1.4.11",
+      "1.4.3",
+      "1.4.6",
+      "2.5.3",
+      "3.3.2",
+      "4.1.2"
+    ],
+    "roles": {
+      "wskaźnik": "meter",
+      "postęp": "progressbar"
+    },
+    "required_attributes": {
+      "meter": [
+        "aria-valuenow",
+        "aria-valuemin",
+        "aria-valuemax"
+      ],
+      "progressbar": []
+    },
+    "optional_attributes": {
+      "meter": [
+        "aria-valuetext",
+        "aria-label / aria-labelledby",
+        "aria-valuetext=\"np. 75%\""
+      ],
+      "progressbar": [
+        "aria-valuenow",
+        "aria-valuemin",
+        "aria-valuemax",
+        "aria-label",
+        "aria-valuetext"
+      ]
+    },
+    "states": {
+      "aria-valuenow": "aktualna wartość",
+      "aria-valuetext": "tekstowa reprezentacja (np. '75 procent')",
+      "aria-busy": "true gdy wartość się zmienia"
+    },
+    "keyboard": [
+      "Meter jest READ-ONLY — nie ma interakcji klawiaturowej poza focusem",
+      "Tab — focus wchodzi na meter (jeśli jest focusable)",
+      "Jeśli meter jest interaktywny (do zmiany) — to nie jest meter, to slider"
+    ],
+    "focus_management": [
+      "Meter jako element statyczny: może być focusable (tabindex=\"0\") dla czytników",
+      "Nie przesuwaj fokusu na meter automatycznie",
+      "Jeśli meter odświeża się dynamicznie: użyj aria-live=\"polite\" do ogłoszenia zmiany"
+    ],
+    "techniques": [
+      "ARIA14",
+      "H91",
+      "G199"
+    ]
+  },
+  "navigation": {
+    "name": "Navigation (Disclosure Navigation)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/",
+    "first_rule_of_aria": "Zanim zbudujesz disclosure navigation z ARIA, sprawdź czy wystarczy zagnieżdżona lista <ul> w <nav>",
+    "native_alternatives": [
+      {
+        "html": "<nav aria-label=\"Produkty\">\n  <ul>\n    <li>\n      <a href=\"/produkty\">Wszystkie produkty</a>\n      <ul>\n        <li><a href=\"/produkty/laptopy\">Laptopy</a></li>\n        <li><a href=\"/produkty/tablety\">Tablety</a></li>\n      </ul>\n    </li>\n  </ul>\n</nav>",
+        "when": "Gdy potrzebujesz nawigacji z rozwijanymi sekcjami — zagnieżdżone listy w <nav> wystarczają",
+        "benefits": "Natywne role nav/list/listitem/link, czytniki ogłaszają strukturę hierarchiczną"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz expand/collapse z ikonami i animacjami przy rozwijaniu/zwijaniu sekcji nawigacji",
+      "Potrzebujesz zapamiętywania stanu (które sekcje są otwarte) między przejściami stron",
+      "Masz bardzo głęboką hierarchię nawigacji (3+ poziomy)"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "2.1.1",
+      "2.1.2",
+      "2.4.11",
+      "2.4.3",
+      "2.4.5",
+      "2.4.6",
+      "2.4.7",
+      "2.4.8",
+      "2.5.3",
+      "2.5.8",
+      "3.2.1",
+      "4.1.2"
+    ],
+    "roles": {
+      "nawigacja": "nav",
+      "przełącznik sekcji": "button (z aria-expanded)",
+      "lista podsekcji": "list (ul/ol)"
+    },
+    "required_attributes": {
+      "nav": [
+        "aria-label"
+      ],
+      "przycisk rozwijania": [
+        "aria-expanded",
+        "aria-controls"
+      ],
+      "lista": []
+    },
+    "optional_attributes": {
+      "przycisk": [],
+      "lista": []
+    },
+    "states": {
+      "aria-expanded": "true gdy podsekcja otwarta"
+    },
+    "keyboard": [
+      "Tab — focus na linkach i przyciskach expand/collapse w nawigacji",
+      "Enter — aktywuje link lub przełącza expand/collapse",
+      "Spacja — przełącza expand/collapse (gdy focus na przycisku)"
+    ],
+    "focus_management": [
+      "Focus na linkach nawigacji: standardowy Tab/Shift+Tab",
+      "Po expand/collapse: focus zostaje na przycisku przełączania",
+      "Gdy podmenu się rozwija: linki wewnątrz są dostępne Tabem",
+      "Aria-current=\"page\" na aktywnym linku"
+    ],
+    "techniques": [
+      "ARIA14",
+      "H91",
+      "G65",
+      "G127"
+    ]
+  },
+  "progressbar": {
+    "name": "Progressbar (pasek postępu)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/progressbar/",
+    "first_rule_of_aria": "Zanim zbudujesz progressbar z ARIA, sprawdź czy wystarczy natywny <progress>",
+    "native_alternatives": [
+      {
+        "html": "<label for=\"upload\">Przesyłanie:</label>\n<progress id=\"upload\" max=\"100\" value=\"45\">45%</progress>\n\n<!-- Nieokreślony postęp -->\n<progress id=\"loading\">Ładowanie...</progress>",
+        "when": "Zawsze gdy potrzebujesz paska postępu — <progress> obsługuje określony i nieokreślony postęp",
+        "benefits": "Wbudowane: role progressbar, aria-valuenow/min/max, nieokreślony postęp (brak value)"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz niestandardowego wyglądu (okrągły pasek, animowana grafika)",
+      "Potrzebujesz progressbara w focus trap lub jako część widgetu"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "1.4.1",
+      "1.4.11",
+      "1.4.3",
+      "1.4.6",
+      "2.2.1",
+      "3.3.2",
+      "4.1.2"
+    ],
+    "roles": {
+      "pasek postępu": "progressbar"
+    },
+    "required_attributes": {
+      "progressbar (custom)": [
+        "role=\"progressbar\"",
+        "aria-valuenow",
+        "aria-valuemin=\"0\"",
+        "aria-valuemax"
+      ],
+      "progressbar (<progress>)": []
+    },
+    "optional_attributes": {
+      "progressbar": [
+        "aria-label / aria-labelledby",
+        "aria-valuetext"
+      ],
+      "dla nieokreślonego": []
+    },
+    "states": {
+      "aria-valuenow": "aktualna wartość (pomijamy dla nieokreślonego postępu)",
+      "aria-busy": "true gdy operacja trwa"
+    },
+    "keyboard": [
+      "Progressbar jest READ-ONLY — nie ma interakcji klawiaturowej",
+      "Jeśli progressbar jest focusable (np. z przyciskiem anulowania), Tab do niego dociera"
+    ],
+    "focus_management": [
+      "Progressbar nie kradnie fokusu — jest ogłaszany przez czytnik",
+      "Zmiana wartości: aria-valuenow i aria-valuetext aktualizowane dynamicznie",
+      "Dla długich operacji: odświeżaj co kilka sekund, NIE po każdej zmianie 1%"
+    ],
+    "techniques": [
+      "ARIA14",
+      "G199",
+      "SCR14"
+    ]
+  },
+  "radio_group": {
+    "name": "Radio Group (grupa opcji wykluczających się)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/radio/",
+    "first_rule_of_aria": "Zanim zbudujesz radio group z ARIA, sprawdź czy wystarczy natywny <input type=\"radio\"> w <fieldset>",
+    "native_alternatives": [
+      {
+        "html": "<fieldset>\n  <legend>Płeć</legend>\n  <label><input type=\"radio\" name=\"gender\" value=\"f\" checked> Kobieta</label>\n  <label><input type=\"radio\" name=\"gender\" value=\"m\"> Mężczyzna</label>\n  <label><input type=\"radio\" name=\"gender\" value=\"other\"> Inna</label>\n</fieldset>",
+        "when": "Zawsze — natywne radio buttony w fieldsecie z legenda są najlepsze",
+        "benefits": "Wbudowane: rola radio/radiogroup, nawigacja strzałkami (automatyczna!), focus, checked state, formularze, walidacja"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz niestandardowego wyglądu radio buttonów (np. karty wyboru, obrazki jako opcje)",
+      "Budujesz własny widget radiogrupy jako część większego komponentu (np. w toolbarze)",
+      "Potrzebujesz opisu stanu (aria-describedby) dla każdej opcji z osobna"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "1.4.1",
+      "1.4.11",
+      "1.4.3",
+      "1.4.6",
+      "2.1.1",
+      "2.1.2",
+      "2.4.11",
+      "2.4.13",
+      "2.4.3",
+      "2.4.6",
+      "2.4.7",
+      "2.5.3",
+      "2.5.8",
+      "3.2.1",
+      "3.3.2",
+      "4.1.2"
+    ],
+    "roles": {
+      "grupa": "radiogroup",
+      "opcja": "radio"
+    },
+    "required_attributes": {
+      "radiogroup": [
+        "aria-label lub aria-labelledby"
+      ],
+      "radio": [
+        "aria-checked"
+      ],
+      "radio (custom <div>/<span>)": [
+        "role=\"radio\"",
+        "aria-checked",
+        "tabindex=\"0\""
+      ]
+    },
+    "optional_attributes": {
+      "radiogroup": [
+        "aria-required",
+        "aria-describedby"
+      ],
+      "radio": [
+        "aria-describedby",
+        "aria-disabled"
+      ]
+    },
+    "states": {
+      "aria-checked": "true dla wybranej opcji, false dla pozostałych",
+      "aria-disabled": "true gdy opcja nieaktywna"
+    },
+    "keyboard": [
+      "Tab — focus wchodzi do grupy (na zaznaczoną opcję lub pierwszą, gdy żadna nie zaznaczona)",
+      "↑ / ↓ — przechodzi między opcjami i automatycznie zaznacza (roving tabindex)",
+      "← / → — to samo co ↑/↓ (w orientacji poziomej)",
+      "Tab — focus wychodzi z grupy (zapamiętuje ostatnio zaznaczoną opcję)",
+      "Shift+Tab — focus wraca do poprzedniego elementu"
+    ],
+    "focus_management": [
+      "Roving tabindex: tylko jedna opcja ma tabindex=\"0\", pozostałe tabindex=\"-1\"",
+      "Tab wchodzi na zaznaczoną opcję (lub pierwszą, gdy żadna nie zaznaczona)",
+      "Strzałki: focus przesuwa się + automatycznie zaznacza nową opcję",
+      "Zaznaczenie podąża za fokusem — nie ma osobnego potwierdzenia (Enter/Spacja nie zmieniają)"
+    ],
+    "techniques": [
+      "ARIA14",
+      "H91",
+      "F68",
+      "G199"
+    ]
+  },
+  "search": {
+    "name": "Search (wyszukiwarka)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/search/",
+    "first_rule_of_aria": "Zanim zbudujesz search z ARIA, sprawdź czy wystarczy <form role=\"search\"> z <input> i <button>",
+    "native_alternatives": [
+      {
+        "html": "<form role=\"search\" aria-label=\"Szukaj w serwisie\">\n  <label for=\"q\">Czego szukasz?</label>\n  <input type=\"search\" id=\"q\" name=\"q\"\n         placeholder=\"np. laptop, monitor...\"\n         aria-describedby=\"search-hint\">\n  <button type=\"submit\">Szukaj</button>\n</form>",
+        "when": "Zawsze — form role=\"search\" z input type=\"search\" + button submit",
+        "benefits": "role='search' to landmark — czytnik umożliwia szybki skok do wyszukiwarki, type='search' dodaje historię wyszukiwania, placeholder to nie etykieta"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz autocomplete / podpowiedzi podczas wpisywania (wtedy też: combobox pattern)",
+      "Potrzebujesz zaawansowanych filtrów wyszukiwania (checkboxy, zakresy)",
+      "Potrzebujesz wyszukiwarki z voice input",
+      "Masz wyniki wyszukiwania ładowane dynamicznie (AJAX)"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "2.1.1",
+      "2.1.2",
+      "2.4.3",
+      "2.4.5",
+      "2.4.6",
+      "2.4.7",
+      "3.2.1",
+      "3.2.2",
+      "3.3.2",
+      "3.3.5",
+      "4.1.2"
+    ],
+    "roles": {
+      "formularz wyszukiwania": "search (landmark)",
+      "pole wyszukiwania": "searchbox (lub input type=\"search\")",
+      "przycisk szukaj": "button",
+      "podpowiedzi": "listbox"
+    },
+    "required_attributes": {
+      "form": [
+        "role=\"search\"",
+        "aria-label"
+      ],
+      "input": [
+        "<label> lub aria-label"
+      ],
+      "button": []
+    },
+    "optional_attributes": {
+      "input": [
+        "aria-describedby",
+        "aria-autocomplete",
+        "aria-controls",
+        "aria-activedescendant"
+      ],
+      "podpowiedzi": [
+        "role=\"listbox\""
+      ]
+    },
+    "states": {
+      "aria-expanded": "true gdy lista podpowiedzi widoczna",
+      "aria-activedescendant": "id aktywnej podpowiedzi"
+    },
+    "keyboard": [
+      "Tab — focus na polu wyszukiwania",
+      "Enter — wysyła zapytanie (submit)",
+      "↓ — otwiera podpowiedzi / przechodzi do następnej podpowiedzi",
+      "↑ — przechodzi do poprzedniej podpowiedzi",
+      "Escape — zamyka podpowiedzi / czyści pole",
+      "Tab (gdy podpowiedzi otwarte) — zamyka podpowiedzi, focus na przycisku Szukaj"
+    ],
+    "focus_management": [
+      "Po załadowaniu strony: focus MOŻE być na polu wyszukiwania (jeśli to główna funkcja strony)",
+      "Po wysłaniu: focus na wynikach wyszukiwania (jeśli dynamiczne) lub przeładowanie strony",
+      "Podpowiedzi: strzałki nawigują, Enter wybiera, Escape zamyka"
+    ],
+    "techniques": [
+      "H91",
+      "F68",
+      "G199",
+      "G124"
+    ]
+  },
+  "slider": {
+    "name": "Slider (suwak pojedynczy)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/slider/",
+    "first_rule_of_aria": "Zanim zbudujesz slider z ARIA, sprawdź czy wystarczy natywny <input type=\"range\">",
+    "native_alternatives": [
+      {
+        "html": "<label for=\"volume\">Głośność:</label>\n<input type=\"range\" id=\"volume\" min=\"0\" max=\"100\" value=\"75\"\n       step=\"1\"\n       oninput=\"this.nextElementSibling.textContent=this.value\">\n<span aria-live=\"polite\">75</span>",
+        "when": "Zawsze gdy potrzebujesz prostego suwaka — input type=\"range\" obsługuje klawiaturę, touch, aria",
+        "benefits": "Wbudowane: rola slider, aria-valuenow/min/max, nawigacja strzałkami, PageUp/Down, Home/End, focus"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz niestandardowego wyglądu (vertical slider, niestandardowy thumb)",
+      "Potrzebujesz niestandardowych kroków (non-linear step)",
+      "Potrzebujesz slidera jako części innego widgetu (np. color picker)",
+      "Potrzebujesz slidera z niestandardową wartością tekstową (aria-valuetext)"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "1.4.1",
+      "1.4.11",
+      "1.4.12",
+      "1.4.3",
+      "1.4.6",
+      "2.1.1",
+      "2.1.2",
+      "2.4.11",
+      "2.4.13",
+      "2.4.3",
+      "2.4.7",
+      "2.5.1",
+      "2.5.3",
+      "2.5.8",
+      "3.2.1",
+      "3.3.2",
+      "4.1.2"
+    ],
+    "roles": {
+      "suwak": "slider"
+    },
+    "required_attributes": {
+      "slider": [
+        "role=\"slider\"",
+        "aria-valuenow",
+        "aria-valuemin",
+        "aria-valuemax",
+        "aria-label lub aria-labelledby"
+      ],
+      "slider (<input type=\"range\">)": []
+    },
+    "optional_attributes": {
+      "slider": [
+        "aria-valuetext",
+        "aria-orientation",
+        "aria-disabled",
+        "step"
+      ]
+    },
+    "states": {
+      "aria-valuenow": "aktualna wartość",
+      "aria-valuetext": "tekstowa reprezentacja (np. 'głośno' zamiast '75')",
+      "aria-orientation": "horizontal / vertical"
+    },
+    "keyboard": [
+      "Tab — focus na sliderze",
+      "← / ↓ — zmniejsza wartość",
+      "→ / ↑ — zwiększa wartość",
+      "PageDown — duży krok w dół",
+      "PageUp — duży krok w górę",
+      "Home — wartość minimalna",
+      "End — wartość maksymalna"
+    ],
+    "focus_management": [
+      "Focus na sliderze: widoczny wskaźnik (thumb) — slider musi pokazywać aktualną wartość",
+      "Zmiana wartości: aria-valuenow i aria-valuetext aktualizowane natychmiast",
+      "Wartość zmienia się w czasie rzeczywistym — nie ma potwierdzenia Enterem",
+      "Dla wartości ciągłych (np. głośność): opcjonalne aria-valuetext z etykietą słowną"
+    ],
+    "techniques": [
+      "ARIA14",
+      "H91",
+      "F68",
+      "G199"
+    ]
+  },
+  "slider_multi": {
+    "name": "Slider Multi-Thumb (suwak zakresu)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/slider-multithumb/",
+    "first_rule_of_aria": "Zanim zbudujesz multi-thumb slider z ARIA, sprawdź czy wystarczą dwa <input type=\"range\"> obok siebie",
+    "native_alternatives": [
+      {
+        "html": "<label for=\"min-price\">Cena od:</label>\n<input type=\"range\" id=\"min-price\" min=\"0\" max=\"1000\" value=\"200\"\n       oninput=\"updateRange()\" aria-label=\"Cena minimalna\">\n<label for=\"max-price\">Cena do:</label>\n<input type=\"range\" id=\"max-price\" min=\"0\" max=\"1000\" value=\"800\"\n       oninput=\"updateRange()\" aria-label=\"Cena maksymalna\">\n<div aria-live=\"polite\" id=\"range-display\">200 zł – 800 zł</div>",
+        "when": "Gdy potrzebujesz wyboru zakresu (cena od-do, data od-do) — dwa osobne range inputy",
+        "benefits": "Dwa natywne sliders z osobna — każdy ma pełną obsługę klawiatury, czytniki ogłaszają każdy osobno"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz wizualnie połączonych thumbów (jeden pasek, dwa uchwyty)",
+      "Potrzebujesz zaawansowanej walidacji (min nie może przekroczyć max)",
+      "Potrzebujesz niestandardowego wyglądu lub wertykalnego multi-slidera"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "1.4.1",
+      "1.4.11",
+      "1.4.3",
+      "1.4.6",
+      "2.1.1",
+      "2.1.2",
+      "2.4.11",
+      "2.4.13",
+      "2.4.3",
+      "2.4.7",
+      "2.5.1",
+      "2.5.3",
+      "2.5.8",
+      "3.2.1",
+      "3.3.2",
+      "4.1.2"
+    ],
+    "roles": {
+      "suwak zakresu": "slider (dla każdego thumba osobno)",
+      "grupa": "group"
+    },
+    "required_attributes": {
+      "slider (min)": [
+        "role=\"slider\"",
+        "aria-valuenow",
+        "aria-valuemin",
+        "aria-valuemax",
+        "aria-label"
+      ],
+      "slider (max)": [
+        "role=\"slider\"",
+        "aria-valuenow",
+        "aria-valuemin",
+        "aria-valuemax",
+        "aria-label"
+      ]
+    },
+    "optional_attributes": {
+      "slider": [
+        "aria-valuetext",
+        "aria-orientation",
+        "aria-disabled"
+      ]
+    },
+    "states": {},
+    "keyboard": [
+      "Tab — focus na sliderze minimalnym",
+      "Tab — focus na sliderze maksymalnym",
+      "← / ↓ — zmniejsza wartość aktualnego thumba",
+      "→ / ↑ — zwiększa wartość aktualnego thumba",
+      "PageDown / PageUp — duży krok",
+      "Home / End — min/max dla aktualnego thumba",
+      "Shift+Tab — focus wraca do poprzedniego slidera lub elementu"
+    ],
+    "focus_management": [
+      "Każdy thumb ma osobny focus — Tab przechodzi między nimi",
+      "Strzałki zmieniają wartość aktywnego thumba",
+      "Walidacja: min NIE może przekroczyć max (zablokuj w JS jeśli potrzeba)",
+      "Aktualizuj aria-valuetext dla zakresu (np. '200 do 800 zł')"
+    ],
+    "techniques": [
+      "ARIA14",
+      "H91",
+      "F68",
+      "G199"
+    ]
+  },
+  "spinbutton": {
+    "name": "Spinbutton (pole liczbowe z przyciskami +/-)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/spinbutton/",
+    "first_rule_of_aria": "Zanim zbudujesz spinbutton z ARIA, sprawdź czy wystarczy natywny <input type=\"number\">",
+    "native_alternatives": [
+      {
+        "html": "<label for=\"qty\">Ilość:</label>\n<input type=\"number\" id=\"qty\" min=\"0\" max=\"99\" step=\"1\" value=\"1\">\n\n<label for=\"rating\">Ocena (1-10):</label>\n<input type=\"number\" id=\"rating\" min=\"1\" max=\"10\" step=\"1\">",
+        "when": "Zawsze gdy potrzebujesz wprowadzania liczby z ograniczeniami — input type=\"number\"",
+        "benefits": "Wbudowane: przyciski +/-, walidacja min/max/step, klawiatura (↑/↓), focus"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz niestandardowych przycisków +/-(poza natywnym input number)",
+      "Potrzebujesz zaawansowanego sterowania (np. przytrzymanie przycisku przyspiesza zmianę)",
+      "Potrzebujesz niestandardowego kroku (step=\"any\" lub zmienny step)"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "1.4.11",
+      "2.1.1",
+      "2.1.2",
+      "2.4.11",
+      "2.4.13",
+      "2.4.3",
+      "2.4.6",
+      "2.4.7",
+      "2.5.3",
+      "2.5.8",
+      "3.2.1",
+      "3.2.2",
+      "3.3.2",
+      "4.1.2"
+    ],
+    "roles": {
+      "pole liczbowe": "spinbutton",
+      "przycisk +": "button",
+      "przycisk -": "button"
+    },
+    "required_attributes": {
+      "spinbutton": [
+        "role=\"spinbutton\"",
+        "aria-valuenow",
+        "aria-valuemin",
+        "aria-valuemax",
+        "aria-label"
+      ],
+      "spinbutton (<input>)": []
+    },
+    "optional_attributes": {
+      "spinbutton": [
+        "aria-valuetext",
+        "aria-disabled"
+      ]
+    },
+    "states": {
+      "aria-valuenow": "aktualna wartość",
+      "aria-valuetext": "tekstowa reprezentacja (np. 'pięć' zamiast '5')"
+    },
+    "keyboard": [
+      "Tab — focus na spinbuttonie / polu liczbowym",
+      "↑ — zwiększa wartość",
+      "↓ — zmniejsza wartość",
+      "PageUp — duży krok w górę",
+      "PageDown — duży krok w dół",
+      "Home — wartość minimalna",
+      "End — wartość maksymalna",
+      "Użytkownik może też wpisać wartość bezpośrednio (w trybie editable)"
+    ],
+    "focus_management": [
+      "Focus na spinbuttonie: strzałki zmieniają wartość",
+      "Jeśli editable: focus na polu, wpisywanie cyfr działa, strzałki zmieniają wartość względną",
+      "Jeśli nieeditable: focus na polu, strzałki zmieniają, klawiatura numeryczna nie działa"
+    ],
+    "techniques": [
+      "ARIA14",
+      "H91",
+      "F68"
+    ]
+  },
+  "status": {
+    "name": "Status (region statusu)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/status/",
+    "first_rule_of_aria": "Zanim zbudujesz status z ARIA, sprawdź czy wystarczy <div> lub <span> z aria-live=\"polite\"",
+    "native_alternatives": [
+      {
+        "html": "<div aria-live=\"polite\" aria-atomic=\"true\" class=\"status-bar\"\n     id=\"status-message\">\n  <!-- Tu wstawiasz komunikaty dynamicznie -->\n</div>\n\n<script>\nfunction showStatus(msg) {\n  document.getElementById('status-message').textContent = msg;\n}\n</script>",
+        "when": "Gdy chcesz ogłosić użytkownikowi zmianę stanu (np. 'Zapisano', 'Połączono', 'Błąd sieci')",
+        "benefits": "aria-live=\"polite\" ogłasza zmianę przy najbliższej pauzie czytnika — nie przerywa bieżącej czynności"
+      },
+      {
+        "html": "<div role=\"status\" aria-live=\"polite\" aria-atomic=\"true\">\n  Koszyk: 3 produkty\n</div>",
+        "when": "Gdy potrzebujesz jawnej roli 'status' dla czytnika (role=\"status\" to landmark)",
+        "benefits": "role=\"status\" to landmark — czytnik umożliwia szybki skok do regionu statusu (np. 'przejdź do stanu koszyka')"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz jawnego landmarku role=\"status\" dla szybkiej nawigacji czytnika",
+      "Potrzebujesz kontroli nad atomic (czy czytać cały region czy tylko zmiany)"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "4.1.2",
+      "4.1.3"
+    ],
+    "roles": {
+      "region statusu": "status",
+      "alternatywnie": "aria-live=\"polite\" na <div>"
+    },
+    "required_attributes": {
+      "status": [
+        "role=\"status\" (lub aria-live=\"polite\" na <div>/<span>)"
+      ],
+      "aria-live": [
+        "aria-live=\"polite\" (jeśli nie ma role=\"status\")"
+      ]
+    },
+    "optional_attributes": {
+      "status": [
+        "aria-atomic=\"true\"",
+        "aria-relevant=\"additions text\""
+      ],
+      "region": []
+    },
+    "states": {
+      "aria-atomic": "true — czy czytać całą treść regionu, czy tylko zmiany"
+    },
+    "keyboard": [
+      "Status jest READ-ONLY — nie przechwytuje fokusu",
+      "Jeśli to landmark: użytkownik czytnika może do niego skoczyć (np. 'przejdź do regionu statusu')",
+      "Tab nie wchodzi do statusu (chyba że zawiera focusable elementy)"
+    ],
+    "focus_management": [
+      "Status NIE kradnie fokusu — jest ogłaszany w tle przez czytnik",
+      "Jeśli status zawiera przycisk (np. 'Cofnij'): przycisk jest dostępny Tabem, ale fokus nie skacze automatycznie",
+      "Dla krytycznych błędów: użyj role=\"alert\" (aria-live=\"assertive\"), NIE role=\"status\""
+    ],
+    "techniques": [
+      "ARIA19",
+      "ARIA22",
+      "F41"
+    ]
+  },
+  "switch": {
+    "name": "Switch (przełącznik dwustanowy)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/switch/",
+    "first_rule_of_aria": "Zanim zbudujesz switch z ARIA, sprawdź czy wystarczy natywny <input type=\"checkbox\"> z odpowiednim CSS-em",
+    "native_alternatives": [
+      {
+        "html": "<label class=\"switch\">\n  <input type=\"checkbox\" role=\"switch\" checked>\n  <span class=\"slider\"></span>\n  Tryb ciemny\n</label>\n\n<style>\n.switch { position: relative; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; }\n.switch input { position: absolute; opacity: 0; width: 0; height: 0; }\n.slider { width: 44px; height: 24px; background: #ccc; border-radius: 12px; transition: .3s; }\n.switch input:checked + .slider { background: #2196F3; }\n.slider::after { content: ''; position: absolute; width: 20px; height: 20px; border-radius: 50%; background: white; top: 2px; left: 2px; transition: .3s; }\n.switch input:checked + .slider::after { left: 22px; }\n.switch input:focus-visible + .slider { outline: 2px solid blue; }\n</style>",
+        "when": "Gdy chcesz wizualnie wyglądający jak switch (toggle) przycisk, ale z semantyką checkboxa + role=\"switch\"",
+        "benefits": "HTML5 checkbox z role=\"switch\" — czytnik ogłasza 'switch, włączony/wyłączony', klawiatura (Spacja) działa, formularze działają"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz niestandardowego wyglądu, którego nie da się osiągnąć przez CSS checkboxa + role=\"switch\"",
+      "Potrzebujesz switcha jako część innego widgetu (np. w toolbarze lub menuitemcheckbox)"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "1.4.11",
+      "1.4.3",
+      "1.4.6",
+      "2.1.1",
+      "2.1.2",
+      "2.4.3",
+      "2.5.3",
+      "2.5.8",
+      "3.2.1",
+      "3.2.2",
+      "4.1.2",
+      "4.1.3"
+    ],
+    "roles": {
+      "przełącznik": "switch"
+    },
+    "required_attributes": {
+      "switch (custom)": [
+        "role=\"switch\"",
+        "aria-checked",
+        "tabindex=\"0\""
+      ],
+      "switch (<input role=\"switch\">)": []
+    },
+    "optional_attributes": {
+      "switch": [
+        "aria-label / aria-labelledby",
+        "aria-describedby",
+        "aria-disabled"
+      ]
+    },
+    "states": {
+      "aria-checked": "true gdy włączony, false gdy wyłączony",
+      "aria-disabled": "true gdy nieaktywny"
+    },
+    "keyboard": [
+      "Tab — focus na switchu",
+      "Spacja — przełącza stan (on/off)",
+      "Shift+Tab — focus wychodzi"
+    ],
+    "focus_management": [
+      "Po przełączeniu: focus pozostaje na switchu, stan się zmienia",
+      "Widoczny wskaźnik fokusu (focus ring) — krytyczny, bo switch często nie ma tekstu"
+    ],
+    "techniques": [
+      "ARIA14",
+      "H91",
+      "F68",
+      "G199"
+    ]
+  },
+  "tab": {
+    "name": "Tab / Tab Panel (zakładki)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/tab/",
+    "first_rule_of_aria": "Zanim zbudujesz taby z ARIA, sprawdź czy wystarczą natywne zakładki przeglądarki lub <details>",
+    "native_alternatives": [
+      {
+        "html": "<div class=\"tabs\">\n  <div role=\"tablist\" aria-label=\"Ustawienia\">\n    <button role=\"tab\" aria-selected=\"true\" aria-controls=\"panel-1\" id=\"tab-1\">\n      Profil\n    </button>\n    <button role=\"tab\" aria-selected=\"false\" aria-controls=\"panel-2\" id=\"tab-2\">\n      Bezpieczeństwo\n    </button>\n  </div>\n  <div role=\"tabpanel\" id=\"panel-1\" aria-labelledby=\"tab-1\">\n    <h2>Profil</h2>\n    <!-- treść panelu -->\n  </div>\n  <div role=\"tabpanel\" id=\"panel-2\" aria-labelledby=\"tab-2\" hidden>\n    <h2>Bezpieczeństwo</h2>\n    <!-- treść panelu -->\n  </div>\n</div>",
+        "when": "Gdy potrzebujesz widoku z zakładkami (jednocześnie widoczny tylko jeden panel)",
+        "benefits": "Standardowy wzorzec tablist/tab/tabpanel — czytniki ogłaszają liczbę zakładek, aktywną zakładkę, można nawigować strzałkami"
+      },
+      {
+        "html": "<details open><summary>Profil</summary><p>Treść panelu profilu</p></details>\n<details><summary>Bezpieczeństwo</summary><p>Treść panelu bezpieczeństwa</p></details>",
+        "when": "Gdy wszystkie panele mogą być otwarte jednocześnie (accordion-style) — niepotrzebne są taby",
+        "benefits": "Prostsze niż taby, każda sekcja osobno rozwijana, brak custom ARIA"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz zaawansowanej nawigacji strzałkami między zakładkami",
+      "Potrzebujesz paneli ładowanych dynamicznie (AJAX)",
+      "Potrzebujesz automatycznej rotacji zakładek (carousel-style)"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "1.4.11",
+      "2.1.1",
+      "2.1.2",
+      "2.4.11",
+      "2.4.13",
+      "2.4.3",
+      "2.4.6",
+      "2.4.7",
+      "2.5.3",
+      "2.5.8",
+      "3.2.1",
+      "3.2.2",
+      "4.1.2"
+    ],
+    "roles": {
+      "lista zakładek": "tablist",
+      "zakładka": "tab",
+      "panel zakładki": "tabpanel"
+    },
+    "required_attributes": {
+      "tablist": [
+        "aria-label lub aria-labelledby"
+      ],
+      "tab": [
+        "aria-selected",
+        "aria-controls=<id-panelu>"
+      ],
+      "tabpanel": [
+        "aria-labelledby=<id-zakładki>",
+        "tabindex=\"0\" gdy aktywny"
+      ],
+      "ukryty panel": [
+        "hidden (lub aria-hidden, lub display:none)"
+      ]
+    },
+    "optional_attributes": {
+      "tablist": [
+        "aria-orientation"
+      ],
+      "tab": [],
+      "tabpanel": []
+    },
+    "states": {
+      "aria-selected": "true dla aktywnej zakładki, false dla pozostałych",
+      "hidden": "true dla nieaktywnych paneli"
+    },
+    "keyboard": [
+      "Tab — focus na aktywnej zakładce (lub pierwszej)",
+      "← / → — przechodzi między zakładkami (roving tabindex)",
+      "Home — pierwsza zakładka",
+      "End — ostatnia zakładka",
+      "Enter / Spacja — aktywuje zakładkę (jeśli nie używasz automatycznej aktywacji)",
+      "Tab (gdy focus na zakładkach) — focus przechodzi do aktywnego panelu (NIE do następnej zakładki)"
+    ],
+    "focus_management": [
+      "Roving tabindex: aktywna zakładka ma tabindex=\"0\", pozostałe tabindex=\"-1\"",
+      "Tab wchodzi na aktywną zakładkę, Tab ponownie do panelu",
+      "Strzałki przełączają zakładkę (automatyczna aktywacja lub Enter/Spacja — zależy od implementacji)",
+      "Po aktywacji: focus na panelu (jeśli panel zawiera treść) lub pozostaje na zakładce"
+    ],
+    "techniques": [
+      "ARIA14",
+      "ARIA16",
+      "H91",
+      "F68",
+      "F107"
+    ]
+  },
+  "table": {
+    "name": "Table (tabela sortowalna)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/table/",
+    "first_rule_of_aria": "Zanim zbudujesz sortowalną tabelę z ARIA, sprawdź czy wystarczy natywny HTML <table> z <th> i sortowaniem JS",
+    "native_alternatives": [
+      {
+        "html": "<table>\n  <caption>Wyniki sprzedaży 2024</caption>\n  <thead>\n    <tr>\n      <th scope=\"col\">\n        <button aria-sort=\"ascending\" onclick=\"sortBy('product')\">\n          Produkt ↑\n        </button>\n      </th>\n      <th scope=\"col\">\n        <button onclick=\"sortBy('sales')\">\n          Sprzedaż\n        </button>\n      </th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr><td>Laptop XYZ</td><td>150</td></tr>\n    <tr><td>Monitor ABC</td><td>89</td></tr>\n  </tbody>\n</table>",
+        "when": "Gdy potrzebujesz sortowalnej tabeli — natywna <table> + <button> w <th> + aria-sort + JS",
+        "benefits": "Natywna semantyka table/row/header/cell, aria-sort na nagłówkach, focus na przyciskach sortowania"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Nigdy — tabela nie wymaga custom ARIA. <table> + <th> + <td> + sortowanie JS w pełni wystarcza",
+      "Jeśli chcesz grid do 2D nawigacji — użyj patternu 'grid' (nie 'table')"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "2.1.1",
+      "2.1.2",
+      "2.4.3",
+      "2.4.6",
+      "2.4.7",
+      "3.2.1",
+      "3.2.2",
+      "4.1.2"
+    ],
+    "roles": {
+      "tabela": "table (natywne)",
+      "nagłówek kolumny": "columnheader (th)",
+      "nagłówek wiersza": "rowheader (th)",
+      "komórka": "cell (td)"
+    },
+    "required_attributes": {
+      "table": [
+        "caption lub aria-label / aria-labelledby"
+      ],
+      "th": [
+        "scope=\"col\" lub scope=\"row\""
+      ],
+      "button sortowania": [
+        "aria-sort (ascending|descending|none)"
+      ]
+    },
+    "optional_attributes": {
+      "th": [
+        "aria-sort"
+      ],
+      "table": [
+        "aria-describedby",
+        "aria-colcount",
+        "aria-rowcount"
+      ]
+    },
+    "states": {
+      "aria-sort": "ascending / descending / none — stan sortowania kolumny"
+    },
+    "keyboard": [
+      "Tab — focus na przyciskach sortowania w nagłówkach",
+      "Enter / Spacja — zmienia kierunek sortowania kolumny",
+      "W tabeli natywnej: przeglądarka obsługuje nawigację strzałkami w trybie przeglądania"
+    ],
+    "focus_management": [
+      "Focus na przyciskach sortowania w <th> — Tab między nimi",
+      "Po zmianie sortowania: focus zostaje na przycisku",
+      "Tabela natywna: strzałki w czytniku nawigują między komórkami"
+    ],
+    "techniques": [
+      "H91",
+      "F68",
+      "G199",
+      "SCR27",
+      "SCR31"
+    ]
+  },
+  "toolbar": {
+    "name": "Toolbar (pasek narzędzi)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/toolbar/",
+    "first_rule_of_aria": "Zanim zbudujesz toolbar z ARIA, sprawdź czy wystarczy <div> z przyciskami i role=\"toolbar\"",
+    "native_alternatives": [
+      {
+        "html": "<div role=\"toolbar\" aria-label=\"Formatowanie tekstu\"\n     aria-orientation=\"horizontal\">\n  <button aria-label=\"Pogrubienie\" aria-pressed=\"false\"><strong>B</strong></button>\n  <button aria-label=\"Kursywa\" aria-pressed=\"false\"><em>I</em></button>\n  <button aria-label=\"Podkreślenie\" aria-pressed=\"false\"><u>U</u></button>\n  <span role=\"separator\" aria-orientation=\"vertical\"></span>\n  <button aria-label=\"Wypunktowanie\">•</button>\n  <button aria-label=\"Numerowanie\">1.</button>\n</div>",
+        "when": "Gdy potrzebujesz paska narzędzi z przyciskami (np. edytor tekstu)",
+        "benefits": "role='toolbar' grupuje przyciski, czytnik ogłasza 'pasek narzędzi', strzałki nawigują między przyciskami"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz rozbudowanego toolbara z wieloma grupami funkcji",
+      "Potrzebujesz toolbara z rolami menuitemcheckbox/menuitemradio",
+      "Potrzebujesz toolbara z overflow menu (więcej opcji po kliknięciu +)"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "1.4.11",
+      "1.4.12",
+      "2.1.1",
+      "2.1.2",
+      "2.4.11",
+      "2.4.13",
+      "2.4.3",
+      "2.4.7",
+      "2.5.3",
+      "2.5.5",
+      "2.5.8",
+      "3.2.1",
+      "3.2.2",
+      "4.1.2",
+      "4.1.3"
+    ],
+    "roles": {
+      "pasek narzędzi": "toolbar",
+      "przycisk": "button",
+      "przycisk toggle": "button + aria-pressed",
+      "separator": "separator"
+    },
+    "required_attributes": {
+      "toolbar": [
+        "role=\"toolbar\"",
+        "aria-label lub aria-labelledby"
+      ],
+      "button": [],
+      "separator": [
+        "role=\"separator\"",
+        "aria-orientation"
+      ]
+    },
+    "optional_attributes": {
+      "toolbar": [
+        "aria-orientation",
+        "aria-controls"
+      ],
+      "button": [
+        "aria-pressed (dla toggle)",
+        "aria-label (gdy brak tekstu)"
+      ],
+      "separator": []
+    },
+    "states": {
+      "aria-pressed": "true/false dla przycisków toggle"
+    },
+    "keyboard": [
+      "Tab — focus wchodzi/wychodzi z toolbara (na pierwszy lub ostatnio aktywny przycisk)",
+      "← / → — nawigacja między przyciskami w toolbarze (roving tabindex)",
+      "Home — pierwszy przycisk",
+      "End — ostatni przycisk",
+      "Enter / Spacja — aktywuje przycisk"
+    ],
+    "focus_management": [
+      "Roving tabindex: aktywny przycisk ma tabindex=\"0\", reszta tabindex=\"-1\"",
+      "Tab wchodzi na aktywny przycisk, Tab wychodzi z toolbara",
+      "Strzałki ←/→ nawigują, Enter/Spacja aktywują",
+      "Zapamiętaj ostatnio aktywny przycisk — Tab wraca na niego po powrocie do toolbara"
+    ],
+    "techniques": [
+      "ARIA14",
+      "ARIA16",
+      "H91",
+      "F68"
+    ]
+  },
+  "tooltip": {
+    "name": "Tooltip (dymek pomocy)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/tooltip/",
+    "first_rule_of_aria": "Zanim zbudujesz tooltip z ARIA, sprawdź czy wystarczy aria-describedby lub title",
+    "native_alternatives": [
+      {
+        "html": "<label for=\"email\">E-mail</label>\n<input type=\"email\" id=\"email\"\n       aria-describedby=\"email-hint\">\n<span id=\"email-hint\" role=\"tooltip\">\n  Wpisz adres w formacie: nazwa@domena.pl\n</span>\n\n<abbr title=\"Naczelny Sąd Administracyjny\">NSA</abbr>",
+        "when": "Gdy chcesz dodać krótką podpowiedź do elementu — aria-describedby lub title w HTML wystarcza",
+        "benefits": "aria-describedby jest ogłaszany przez czytnik po etykiecie i roli, title działa jako fallback"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz bogatego tooltipa z HTML (linki, listy) — title nie wspiera HTML",
+      "Potrzebujesz tooltipa pojawiającego się na hover i focus (funkcjonalność wykraczająca poza natywny title)",
+      "Potrzebujesz tooltipa z opóźnieniem lub animacją"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "2.4.6",
+      "2.5.3",
+      "2.5.8",
+      "3.2.1",
+      "3.3.2",
+      "4.1.2"
+    ],
+    "roles": {
+      "dymek": "tooltip"
+    },
+    "required_attributes": {
+      "tooltip": [
+        "role=\"tooltip\""
+      ],
+      "element nadrzędny": [
+        "aria-describedby=<id-tooltipa>"
+      ]
+    },
+    "optional_attributes": {
+      "tooltip": [],
+      "element nadrzędny": []
+    },
+    "states": {},
+    "keyboard": [
+      "Tooltip NIE przechwytuje fokusu — pojawia się automatycznie na focus/hover",
+      "Escape — zamyka tooltip (jeśli tooltip zamykalny)",
+      "Tab — focus na elemencie nadrzędnym, tooltip pojawia się"
+    ],
+    "focus_management": [
+      "Tooltip pojawia się na focus elementu nadrzędnego — NIE przesuwaj fokusu do tooltipa",
+      "Tooltip znika po utracie fokusu / po najechaniu myszą na inny element",
+      "Jeśli tooltip zawiera linki lub przyciski: przenieś je do dialogu lub panelu (tooltip nie jest na to przeznaczony)",
+      "Tooltip musi być dostępny zarówno z myszy (hover) jak i z klawiatury (focus)"
+    ],
+    "techniques": [
+      "ARIA14",
+      "H91",
+      "G199"
+    ]
+  },
+  "tree": {
+    "name": "Tree / Tree View (drzewo hierarchiczne)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/tree/",
+    "first_rule_of_aria": "Zanim zbudujesz tree z ARIA, sprawdź czy wystarczy zagnieżdżona lista <ul>/<li> z CSS-em",
+    "native_alternatives": [
+      {
+        "html": "<ul aria-label=\"Struktura plików\" role=\"tree\">\n  <li role=\"treeitem\" aria-expanded=\"true\" aria-level=\"1\">\n    <span>📁 Dokumenty</span>\n    <ul role=\"group\">\n      <li role=\"treeitem\" aria-expanded=\"false\" aria-level=\"2\">\n        <span>📁 Projekty</span>\n        <ul role=\"group\">\n          <li role=\"treeitem\" aria-level=\"3\">📄 Raport.pdf</li>\n          <li role=\"treeitem\" aria-level=\"3\">📄 Plan.xlsx</li>\n        </ul>\n      </li>\n    </ul>\n  </li>\n</ul>",
+        "when": "Gdy potrzebujesz hierarchicznego widoku danych z możliwością rozwijania/zwijania",
+        "benefits": "role='tree/treeitem/group' + aria-expanded + aria-level — czytnik ogłasza strukturę drzewa, poziom zagłębienia"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz zaawansowanych operacji na drzewie (drag & drop, przenoszenie gałęzi)",
+      "Potrzebujesz tree z zaznaczaniem wielu elementów (checkbox tree)",
+      "Potrzebujesz wirtualnego scrolla dla bardzo dużego drzewa (tysiące węzłów)"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "1.4.11",
+      "1.4.12",
+      "2.1.1",
+      "2.1.2",
+      "2.4.11",
+      "2.4.13",
+      "2.4.3",
+      "2.4.6",
+      "2.4.7",
+      "2.5.3",
+      "2.5.8",
+      "3.2.1",
+      "3.2.2",
+      "4.1.2"
+    ],
+    "roles": {
+      "drzewo": "tree",
+      "węzeł": "treeitem",
+      "grupa (poddrzewo)": "group"
+    },
+    "required_attributes": {
+      "tree": [
+        "role=\"tree\"",
+        "aria-label lub aria-labelledby"
+      ],
+      "treeitem": [
+        "role=\"treeitem\"",
+        "aria-level"
+      ],
+      "treeitem z dziećmi": [
+        "aria-expanded"
+      ],
+      "group": [
+        "role=\"group\""
+      ]
+    },
+    "optional_attributes": {
+      "tree": [
+        "aria-multiselectable",
+        "aria-activedescendant"
+      ],
+      "treeitem": [
+        "aria-posinset",
+        "aria-setsize",
+        "aria-selected",
+        "aria-disabled"
+      ],
+      "group": []
+    },
+    "states": {
+      "aria-expanded": "true gdy węzeł rozwinięty, false gdy zwinięty, brak gdy liść",
+      "aria-selected": "true gdy węzeł zaznaczony",
+      "aria-level": "poziom zagłębienia (1, 2, 3...)"
+    },
+    "keyboard": [
+      "Tab — focus wchodzi na drzewo (pierwszy lub ostatnio aktywny węzeł)",
+      "↑ / ↓ — nawigacja między widocznymi węzłami",
+      "→ — rozwija węzeł (jeśli zwinięty) lub przechodzi do pierwszego dziecka",
+      "← — zwija węzeł (jeśli rozwinięty) lub przechodzi do rodzica",
+      "* (asterysk) — rozwija wszystkie węzły na bieżącym poziomie",
+      "Home — pierwszy węzeł w drzewie",
+      "End — ostatni widoczny węzeł",
+      "Enter — aktywuje węzeł (jeśli interaktywny)",
+      "Spacja — zaznacza/odznacza węzeł (w trybie multiselect)"
+    ],
+    "focus_management": [
+      "Roving tabindex: aktywny węzeł ma tabindex=\"0\", reszta tabindex=\"-1\"",
+      "Tab wchodzi na aktywny węzeł, Tab wychodzi z drzewa",
+      "Strzałki nawigują między widocznymi węzłami (NIE ukrytymi)",
+      "Po rozwinięciu: focus na rodzicu (lub opcjonalnie na pierwszym dziecku)",
+      "Po zwinięciu: focus na rodzicu"
+    ],
+    "techniques": [
+      "ARIA14",
+      "ARIA16",
+      "H91",
+      "F68"
+    ]
+  },
+  "treegrid": {
+    "name": "Treegrid (siatka hierarchiczna)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/treegrid/",
+    "first_rule_of_aria": "Zanim zbudujesz treegrid z ARIA, sprawdź czy wystarczy <table> z aria-expanded i zagnieżdżonymi wierszami",
+    "native_alternatives": [
+      {
+        "html": "<table role=\"treegrid\" aria-label=\"Struktura projektu\">\n  <thead>\n    <tr>\n      <th scope=\"col\">Nazwa</th>\n      <th scope=\"col\">Status</th>\n      <th scope=\"col\">Przydzielone do</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr role=\"row\" aria-level=\"1\" aria-expanded=\"true\">\n      <td role=\"gridcell\">📁 Faza 1</td>\n      <td role=\"gridcell\">W trakcie</td>\n      <td role=\"gridcell\">Adam</td>\n    </tr>\n    <tr role=\"row\" aria-level=\"2\" aria-expanded=\"false\">\n      <td role=\"gridcell\">📁 Zadania</td>\n      <td role=\"gridcell\">—</td>\n      <td role=\"gridcell\">Adam</td>\n    </tr>\n    <tr role=\"row\" aria-level=\"3\">\n      <td role=\"gridcell\">📄 Analiza potrzeb</td>\n      <td role=\"gridcell\">✅ Zrobione</td>\n      <td role=\"gridcell\">Adam</td>\n    </tr>\n  </tbody>\n</table>",
+        "when": "Gdy potrzebujesz hierarchii z danymi tabelarycznymi (np. struktura projektu, lista plików z metadanymi)",
+        "benefits": "Połączenie grid + tree — strzałki ←/→ zwijają/rozwijają, strzałki ↑/↓ nawigują między wierszami"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz edycji komórek w hierarchicznej siatce",
+      "Potrzebujesz zaawansowanego zaznaczania wierszy w drzewie"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.2",
+      "1.4.11",
+      "1.4.12",
+      "2.1.1",
+      "2.1.2",
+      "2.4.11",
+      "2.4.13",
+      "2.4.3",
+      "2.4.6",
+      "2.4.7",
+      "2.5.3",
+      "2.5.8",
+      "3.2.1",
+      "3.2.2",
+      "4.1.2"
+    ],
+    "roles": {
+      "siatka hierarchiczna": "treegrid",
+      "wiersz": "row",
+      "komórka": "gridcell",
+      "nagłówek kolumny": "columnheader"
+    },
+    "required_attributes": {
+      "treegrid": [
+        "role=\"treegrid\"",
+        "aria-label lub aria-labelledby"
+      ],
+      "row z dziećmi": [
+        "aria-expanded",
+        "aria-level"
+      ],
+      "row": [
+        "aria-level"
+      ]
+    },
+    "optional_attributes": {
+      "row": [
+        "aria-posinset",
+        "aria-setsize",
+        "aria-selected"
+      ],
+      "gridcell": []
+    },
+    "states": {
+      "aria-expanded": "true gdy wiersz rozwinięty, false gdy zwinięty",
+      "aria-level": "poziom zagnieżdżenia",
+      "aria-selected": "true gdy wiersz zaznaczony"
+    },
+    "keyboard": [
+      "Tab — focus wchodzi na treegrid (pierwsza komórka w aktywnym wierszu)",
+      "↑ / ↓ — nawigacja między wierszami (całe wiersze, NIE komórki)",
+      "← — zwija węzeł (jeśli rozwinięty) lub przechodzi do rodzica",
+      "→ — rozwija węzeł (jeśli zwinięty) lub wchodzi w tryb nawigacji komórkami",
+      "Home — pierwszy wiersz",
+      "End — ostatni widoczny wiersz",
+      "F2 — przechodzi w tryb edycji komórki (jeśli editable)"
+    ],
+    "focus_management": [
+      "Tab wchodzi na pierwszy wiersz, strzałki ↑/↓ nawigują między wierszami",
+      "Strzałki ←/→ zwijają/rozwijają (NIE nawigują między komórkami jak w grid)",
+      "Po rozwinięciu: focus zostaje na rodzicu (lub na pierwszym dziecku)",
+      "Tab wychodzi z treegrida"
+    ],
+    "techniques": [
+      "ARIA14",
+      "ARIA16",
+      "H91",
+      "SCR27",
+      "SCR31"
+    ]
+  },
+  "alert": {
+    "name": "Alert (komunikat)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/alert/",
+    "first_rule_of_aria": "Zanim zbudujesz alert z ARIA, sprawdź czy wystarczy zwykły element HTML włożony do aria-live regionu",
+    "native_alternatives": [
+      {
+        "html": "<div id=\"toast-container\" aria-live=\"polite\">\n  <!-- Tu wstawiasz komunikaty dynamicznie -->\n</div>\n\n<script>\nfunction showMessage(text, type) {\n  const el = document.createElement(\"div\");\n  el.textContent = text;\n  el.className = type;\n  document.getElementById(\"toast-container\").appendChild(el);\n  setTimeout(() => el.remove(), 5000);\n}\n</script>",
+        "when": "Gdy chcesz wyświetlić nietoastowy komunikat, który nie wymaga natychmiastowej uwagi",
+        "benefits": "aria-live=\"polite\" nie przerywa bieżącej wypowiedzi czytnika"
+      },
+      {
+        "html": "<form onsubmit=\"return validate()\">\n  <label for=\"email\">E-mail</label>\n  <input type=\"email\" id=\"email\" required>\n  <span id=\"email-error\" role=\"alert\" aria-live=\"assertive\"></span>\n  <button type=\"submit\">Wyślij</button>\n</form>",
+        "when": "Gdy walidujesz formularz i chcesz ogłosić błąd konkretnego pola",
+        "benefits": "role=\"alert\" + aria-live=\"assertive\" wymusza natychmiastowe odczytanie przez czytnik"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz rozbudowanego alertu z przyciskami akcji (wtedy użyj alertdialog)",
+      "Potrzebujesz kontroli nad tym, co i kiedy czytnik ogłasza"
+    ],
+    "scs": [
+      "1.1.1",
+      "1.3.1",
+      "1.4.1",
+      "1.4.3",
+      "1.4.11",
+      "2.2.1",
+      "2.2.2",
+      "3.2.1",
+      "3.3.1",
+      "3.3.2",
+      "4.1.2",
+      "4.1.3"
+    ],
+    "roles": {
+      "kontener komunikatu": "alert",
+      "alternatywnie (mniej inwazyjny)": "status",
+      "region live (wymagany)": "aria-live=\"assertive\""
+    },
+    "required_attributes": {
+      "alert": [],
+      "kontener nadrzędny": [
+        "aria-live=\"assertive\" (jeśli nie ma role=\"alert\")"
+      ]
+    },
+    "optional_attributes": {
+      "alert": [
+        "aria-atomic=\"true\"",
+        "aria-relevant"
+      ],
+      "kontener nadrzędny": [
+        "aria-relevant=\"additions\"",
+        "aria-atomic=\"false\""
+      ]
+    },
+    "states": {},
+    "keyboard": [
+      "Alert NIE przechwytuje fokusu",
+      "Użytkownik może kontynuować bieżącą czynność",
+      "Jeśli alert zawiera przycisk lub link, Tab do niego dociera",
+      "Dla krytycznych błędów blokujących: rozważ alertdialog"
+    ],
+    "focus_management": [
+      "ALERT NIGDY NIE KRADNIE FOKUSU",
+      "Alert jest ogłaszany przez czytnik ekranu automatycznie",
+      "Jeśli potrzebujesz przerwać pracę użytkownika — użyj alertdialog, NIE alert"
+    ],
+    "techniques": [
+      "ARIA19",
+      "ARIA22",
+      "F41",
+      "SCR14",
+      "G199",
+      "G193"
+    ]
+  },
+  "combobox": {
+    "name": "Combobox",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/combobox/",
+    "first_rule_of_aria": "Zanim zbudujesz combobox z ARIA, sprawdź czy wystarczy natywny HTML",
+    "native_alternatives": [
+      {
+        "html": "<label for=\"city\">Miasto</label>\n<select id=\"city\">\n  <option>Warszawa</option>\n  <option>Kraków</option>\n</select>",
+        "when": "Gdy użytkownik wybiera z zamkniętej listy opcji (select-only)",
+        "benefits": "Wbudowana obsługa klawiatury, focusu, rola select/option, aria-expanded automatycznie"
+      },
+      {
+        "html": "<label for=\"city\">Miasto</label>\n<input id=\"city\" list=\"cities\">\n<datalist id=\"cities\">\n  <option>Warszawa</option>\n  <option>Kraków</option>\n</datalist>",
+        "when": "Gdy użytkownik może wpisać dowolną wartość LUB wybrać z podpowiedzi",
+        "benefits": "Wbudowane filtrowanie, natywne role, brak custom ARIA"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz edytowalnego pola z filtrowaniem i podpowiedziami wykraczającymi poza datalist",
+      "Potrzebujesz niestandardowego układu wizualnego listy (ikony, grupy, kolory)",
+      "Potrzebujesz zaawansowanego zachowania (np. wielokrotny wybór z comboboxa)"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.3.5",
+      "1.4.1",
+      "1.4.11",
+      "2.1.1",
+      "2.1.2",
+      "2.4.3",
+      "2.4.6",
+      "2.4.7",
+      "2.4.11",
+      "2.4.13",
+      "2.5.3",
+      "2.5.8",
+      "3.2.1",
+      "3.2.2",
+      "3.3.2",
+      "4.1.2",
+      "4.1.3"
+    ],
+    "roles": {
+      "container": "combobox",
+      "list": "listbox",
+      "option": "option"
+    },
+    "required_attributes": {
+      "combobox": [
+        "aria-expanded",
+        "aria-haspopup=\"listbox\"",
+        "aria-controls"
+      ],
+      "listbox": [],
+      "option": [
+        "aria-selected"
+      ]
+    },
+    "optional_attributes": {
+      "combobox": [
+        "aria-activedescendant",
+        "aria-autocomplete"
+      ],
+      "listbox": [],
+      "option": []
+    },
+    "states": {
+      "aria-expanded": "true gdy lista otwarta, false gdy zamknięta",
+      "aria-selected": "true gdy opcja zaznaczona, false gdy nie"
+    },
+    "keyboard": [
+      "Tab — focus wchodzi do comboboxa",
+      "↓ — otwiera listę i przechodzi do pierwszej opcji",
+      "↑/↓ — nawigacja między opcjami",
+      "Enter — wybiera aktualnie podświetloną opcję i zamyka listę",
+      "Escape — zamyka listę, focus wraca do pola",
+      "Home/End — przechodzi do pierwszej/ostatniej opcji",
+      "litery — filtruje listę (gdy aria-autocomplete=\"list\" lub \"both\")",
+      "Tab (gdy lista otwarta) — zamyka listę i przechodzi do następnego elementu"
+    ],
+    "focus_management": [
+      "Po otwarciu comboboxa: fokus pozostaje w polu, aria-activedescendant wskazuje aktywną opcję",
+      "Po zamknięciu Escape: fokus w polu comboboxa",
+      "Po wybraniu opcji Enter: fokus w polu comboboxa, lista zamknięta",
+      "Po zamknięciu Tab: fokus przechodzi do następnego elementu w taborderze"
+    ],
+    "techniques": [
+      "ARIA14",
+      "ARIA16",
+      "H98",
+      "F107"
+    ]
+  },
+  "dialog": {
+    "name": "Dialog / Modal",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/",
+    "first_rule_of_aria": "Zanim zbudujesz modal z ARIA, sprawdź czy wystarczy natywny HTML <dialog> z showModal()",
+    "native_alternatives": [
+      {
+        "html": "<dialog id=\"modal\">\n  <h2>Potwierdzenie</h2>\n  <p>Czy na pewno chcesz usunąć?</p>\n  <form method=\"dialog\">\n    <button value=\"ok\">Tak</button>\n    <button value=\"cancel\">Nie</button>\n  </form>\n</dialog>\n<button onclick=\"document.getElementById('modal').showModal()\">Usuń</button>",
+        "when": "Gdy potrzebujesz prostego modala",
+        "benefits": "Wbudowane: focus trap, zamykanie Escape, zarządzanie fokusem"
+      },
+      {
+        "html": "<div role=\"alertdialog\" aria-modal=\"true\" aria-labelledby=\"alert-title\">\n  <h2 id=\"alert-title\">Błąd zapisu</h2>\n  <p>Nie udało się zapisać pliku.</p>\n  <button>OK</button>\n</div>",
+        "when": "Gdy modal zawiera pilną wiadomość (alertdialog)",
+        "benefits": "role=alertdialog od razu informuje technologie asystujące o pilnym komunikacie"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz zaawansowanych animacji przy otwieraniu/zamykaniu",
+      "Potrzebujesz niestandardowego zarządzania fokusem",
+      "Działasz w starszym środowisku bez wsparcia dla elementu <dialog>"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.4.11",
+      "2.1.1",
+      "2.1.2",
+      "2.4.3",
+      "2.4.7",
+      "2.4.11",
+      "2.4.13",
+      "3.2.1",
+      "4.1.2"
+    ],
+    "roles": {
+      "container (modalny)": "dialog",
+      "container (alert)": "alertdialog",
+      "tło/przysłona": "presentation lub none"
+    },
+    "required_attributes": {
+      "dialog": [
+        "aria-modal=\"true\"",
+        "aria-label lub aria-labelledby"
+      ],
+      "tło": []
+    },
+    "optional_attributes": {
+      "dialog": [
+        "aria-describedby"
+      ]
+    },
+    "states": {},
+    "keyboard": [
+      "Tab — cykluje między elementami wewnątrz modala (focus trap)",
+      "Shift+Tab — cykluje wstecz wewnątrz modala",
+      "Escape — zamyka modal, focus wraca do przycisku który go otworzył",
+      "Gdy modal otwarty: Tab NIE może wyjść poza modal"
+    ],
+    "focus_management": [
+      "Po otwarciu: fokus ląduje na pierwszym interaktywnym elemencie",
+      "W trakcie: Tab krąży tylko wewnątrz modala — focus trap jest krytyczny",
+      "Po zamknięciu (Escape/Enter): fokus wraca dokładnie do elementu który otworzył modal",
+      "Zabezpieczenie: jeśli nie ma focusable elementów wewnątrz, focus na przycisku zamykającym"
+    ],
+    "techniques": [
+      "ARIA14",
+      "ARIA16",
+      "H91",
+      "SCR37"
+    ]
+  },
+  "grid": {
+    "name": "Grid (tabela interaktywna)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/grid/",
+    "first_rule_of_aria": "Zanim zbudujesz interaktywną siatkę z ARIA, sprawdź czy wystarczy natywny HTML <table> z sortowaniem przez JS",
+    "native_alternatives": [
+      {
+        "html": "<table>\n  <caption>Tabela wyników</caption>\n  <thead>\n    <tr>\n      <th scope=\"col\">\n        <button aria-sort=\"ascending\" onclick=\"sortBy('name')\">Nazwa ↑</button>\n      </th>\n      <th scope=\"col\">Wartość</th>\n    </tr>\n  </thead>\n  <tbody>\n    <tr><td>Alfa</td><td>100</td></tr>\n  </tbody>\n</table>",
+        "when": "Gdy dane są tabelaryczne",
+        "benefits": "Natywne role table/row/header/cell"
+      },
+      {
+        "html": "<table role=\"treegrid\">\n  <tbody>\n    <tr role=\"treeitem\" aria-expanded=\"true\" aria-level=\"1\">\n      <td>📁 Dokumenty</td><td>15 KB</td>\n    </tr>\n  </tbody>\n</table>",
+        "when": "Gdy potrzebujesz hierarchicznej siatki",
+        "benefits": "Łączy zalety tabeli z nawigacją drzewiastą"
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz 2D nawigacji strzałkami",
+      "Potrzebujesz zaznaczania wielu komórek/wierszy",
+      "Potrzebujesz interaktywnej edycji komórek",
+      "Potrzebujesz niestandardowego układu"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.4.1",
+      "1.4.11",
+      "1.4.12",
+      "2.1.1",
+      "2.1.2",
+      "2.4.3",
+      "2.4.6",
+      "2.4.7",
+      "2.4.11",
+      "2.4.13",
+      "2.5.3",
+      "2.5.8",
+      "3.2.1",
+      "3.2.2",
+      "3.3.2",
+      "4.1.2"
+    ],
+    "roles": {
+      "siatka": "grid",
+      "wiersz": "row",
+      "komórka": "gridcell",
+      "nagłówek kolumny": "columnheader",
+      "nagłówek wiersza": "rowheader"
+    },
+    "required_attributes": {
+      "grid": [
+        "aria-label lub aria-labelledby"
+      ],
+      "row": [],
+      "gridcell": [],
+      "columnheader": [],
+      "rowheader": []
+    },
+    "optional_attributes": {
+      "grid": [
+        "aria-colcount",
+        "aria-rowcount",
+        "aria-readonly",
+        "aria-multiselectable"
+      ],
+      "row": [
+        "aria-rowindex",
+        "aria-selected"
+      ],
+      "gridcell": [
+        "aria-colindex",
+        "aria-rowindex",
+        "aria-readonly",
+        "aria-selected"
+      ],
+      "columnheader": [
+        "aria-sort",
+        "aria-colindex",
+        "aria-rowindex"
+      ],
+      "rowheader": [
+        "aria-expanded",
+        "aria-colindex",
+        "aria-rowindex"
+      ]
+    },
+    "states": {
+      "aria-selected": "true gdy komórka/wiersz zaznaczony",
+      "aria-sort": "ascending|descending|none dla nagłówków",
+      "aria-expanded": "true gdy wiersz rozwinięty (treegrid)"
+    },
+    "keyboard": [
+      "Tab — focus wchodzi do siatki",
+      "←/↑/→/↓ — nawigacja 2D między komórkami",
+      "Ctrl+←/↑/→/↓ — przesuwa focus na krawędź siatki",
+      "PageUp/PageDown — przewija",
+      "Home — pierwsza komórka w wierszu",
+      "End — ostatnia komórka w wierszu",
+      "Ctrl+Home — pierwsza komórka w siatce",
+      "Ctrl+End — ostatnia komórka w siatce",
+      "Enter — aktywuje/zaznacza komórkę",
+      "Shift+strzałki — rozszerza zaznaczenie",
+      "Escape — zamyka edycję komórki"
+    ],
+    "focus_management": [
+      "Tab wchodzi do siatki: fokus na pierwszej komórce — rola gridcell, NIE row",
+      "Po wejściu: strzałki poruszają się wyłącznie wewnątrz siatki",
+      "Gdy fokus jest w siatce: Tab NIE nawiguje między komórkami",
+      "Tab wychodzi z siatki: focus na następnym elemencie, zapamiętując pozycję",
+      "Shift+Tab: focus wraca do poprzedniego elementu przed siatką"
+    ],
+    "techniques": [
+      "ARIA14",
+      "ARIA16",
+      "H91",
+      "SCR27",
+      "SCR31",
+      "SCR33",
+      "SCR34",
+      "F68"
+    ]
+  }
+}
