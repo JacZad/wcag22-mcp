@@ -14,8 +14,6 @@ __pycache__/
 
 # Build
 wcag-html/
-build_data.py
-sc_map.py
 
 # Embedded repo
 wcag-repo/
