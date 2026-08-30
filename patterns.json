@@ -2514,6 +2514,105 @@
       "SCR37"
     ]
   },
+  "flashcards": {
+    "name": "Flashcards (fiszka edukacyjna)",
+    "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/disclosure/",
+    "first_rule_of_aria": "Zanim zbudujesz fiszkę z custom ARIA, sprawdź czy wystarczy <details>/<summary> — fiszka to w naturze widget pokaż/ukryj (disclosure)",
+    "native_alternatives": [
+      {
+        "html": "<div class=\"flashcard\">\n  <p class=\"question\" id=\"q1\">Pytanie: Jaka jest stolica Francji?</p>\n  <details>\n    <summary aria-labelledby=\"q1 s1-label\"><span id=\"s1-label\">Pokaż odpowiedź</span></summary>\n    <div class=\"answer\">\n      <p>Odpowiedź: Paryż</p>\n    </div>\n  </details>\n</div>",
+        "when": "Zawsze gdy potrzebujesz podstawowej fiszki pokaż/ukryj — działa bez JS i CSS",
+        "benefits": "Wbudowane: toggle rozwijania, rola disclosure, obsługa Enter/Spacji, zarządzanie stanem expanded. aria-labelledby łączy pytanie z przyciskiem, więc czytnik czyta pytanie zanim ogłosi etykietę przycisku."
+      },
+      {
+        "html": "<div class=\"flashcard fancy\">\n  <p class=\"question\" id=\"q2\">Pytanie: Ile planet ma Układ Słoneczny?</p>\n  <details class=\"flippable\">\n    <summary aria-labelledby=\"q2 s2-label\"><span id=\"s2-label\">Sprawdź</span></summary>\n    <div class=\"answer\">\n      <p>Odpowiedź: 8</p>\n    </div>\n  </details>\n</div>\n<!-- Z CSS: efekt obrotu 3D, backface-visibility -->",
+        "when": "Gdy potrzebujesz animowanego odwrócenia (efekt flip) z zachowaniem progresywnego ulepszania",
+        "benefits": "Ta sama semantyka HTML, warstwa CSS dodaje płynny obrót. Z włączonym JS: aria-live='polite' ogłasza treść odpowiedzi. Bez JS: <details> rozwija się natywnie."
+      }
+    ],
+    "use_custom_aria_only_when": [
+      "Potrzebujesz płynnej animacji odwrócenia, a <details> nie daje wystarczającej kontroli nad timingiem i przejściami CSS (np. synchronizacja obrotu z czytnikiem)",
+      "Potrzebujesz stanu aria-pressed zamiast expanded — wtedy zamiast <details> użyj <button> z aria-pressed + aria-live dla odpowiedzi",
+      "Fiszka jest częścią większego edytora/aplikacji SPA, gdzie <details> nie integruje się dobrze z custom focus management"
+    ],
+    "scs": [
+      "1.3.1",
+      "1.4.1",
+      "1.4.3",
+      "1.4.11",
+      "2.1.1",
+      "2.1.2",
+      "2.2.2",
+      "2.4.3",
+      "2.4.6",
+      "2.4.7",
+      "2.4.11",
+      "2.4.13",
+      "2.5.3",
+      "2.5.8",
+      "3.2.1",
+      "3.3.2",
+      "4.1.2",
+      "4.1.3"
+    ],
+    "roles": {
+      "karta fiszki": "brak dodatkowej roli (grupy semantycznej jak lista)",
+      "przycisk odwrócenia (ścieżka natywna)": "disclosure (z <details>/<summary>)",
+      "przycisk odwrócenia (ścieżka custom)": "button + aria-pressed",
+      "treść odpowiedzi": "region lub aria-live='polite'"
+    },
+    "required_attributes": {
+      "summary (ścieżka natywna)": [
+        "aria-labelledby=<id-pytania> <id-etykiety>"
+      ],
+      "button odwrócenia (ścieżka custom)": [
+        "role='button'",
+        "aria-pressed='true|false'",
+        "aria-labelledby=<id-pytania>"
+      ],
+      "odpowiedź (ścieżka custom)": [
+        "role='region' (gdy potrzeba nawigacji) lub aria-live='polite' (gdy odpowiedź pojawia się dynamicznie)"
+      ]
+    },
+    "optional_attributes": {
+      "karta fiszki": [
+        "role='group' + aria-label='Fiszka N z M'"
+      ],
+      "summary": [
+        "aria-describedby (dla dodatkowych instrukcji)"
+      ],
+      "button odwrócenia": [
+        "aria-describedby"
+      ]
+    },
+    "states": {
+      "aria-expanded (details)": "true gdy odpowiedź widoczna, false gdy ukryta",
+      "aria-pressed (button custom)": "true gdy odpowiedź widoczna, false gdy ukryta",
+      "details open": "true/false — natywny atrybut HTML, czytnik ogłasza stan rozwijany/zwinięty"
+    },
+    "keyboard": [
+      "Tab — wchodzi do fiszki, focus na przycisku odwrócenia (<summary> lub <button>)",
+      "Enter / Spacja — odwraca fiszkę (pokazuje/ukrywa odpowiedź)",
+      "Shift+Tab — wychodzi z fiszki do poprzedniego elementu na stronie",
+      "Gdy wiele fiszek na stronie: Tab przechodzi między fiszkami, każda ma własny przycisk odwrócenia",
+      "Gdy fiszka odwrócona: Tab może wejść w treść odpowiedzi (jeśli zawiera linki/przyciski) — standardowa nawigacja"
+    ],
+    "focus_management": [
+      "Po wejściu Tabem: focus ląduje na przycisku odwrócenia (summary/button)",
+      "Po odwróceniu (kliknięcie/Enter/Spacja): focus pozostaje na przycisku odwrócenia — treść odpowiedzi ogłasza aria-live",
+      "Po ponownym odwróceniu (schowanie odpowiedzi): focus dalej na przycisku, stan pressed/expanded zmienia się",
+      "Jeśli odpowiedź zawiera interaktywne elementy (linki): Tab wchodzi w nie dopiero po odwróceniu fiszki",
+      "Powrót do pytania (zamknięcie): user ponownie klika przycisk — fokus nie przeskakuje automatycznie"
+    ],
+    "techniques": [
+      "ARIA14",
+      "ARIA16",
+      "H98",
+      "SCR37",
+      "F107",
+      "G199"
+    ]
+  },
   "grid": {
     "name": "Grid (tabela interaktywna)",
     "apg_url": "https://www.w3.org/WAI/ARIA/apg/patterns/grid/",

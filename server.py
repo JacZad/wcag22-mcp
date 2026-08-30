@@ -8,6 +8,11 @@ Usage:
   python3 server.py                          # stdio
   python3 server.py --transport sse --port 9099      # SSE
   python3 server.py --transport streamable-http --port 9099  # Streamable HTTP
+
+API key protection (optional):
+  python3 server.py --transport streamable-http --port 9100 --api-key "twoj-klucz"
+  # or: export WCAG22_API_KEY="twoj-klucz"
+  # Client sends: X-API-Key: twoj-klucz
 """
 
 import argparse
@@ -117,6 +122,58 @@ def log_response(tool_name, elapsed_ms, content, error=None, truncated=False):
 
     full = "\n".join(lines)
     log.info(full)
+
+
+# ─── API key middleware ───
+
+class APIKeyMiddleware:
+    """
+    ASGI middleware sprawdzający nagłówek X-API-Key.
+    Jeśli klucz nie pasuje — zwraca 401.
+    Jeśli klucz jest pusty (brak zabezpieczenia) — przepuszcza bez sprawdzenia.
+    """
+
+    def __init__(self, app, api_key: str):
+        self.app = app
+        self.api_key = api_key
+
+    async def __call__(self, scope, receive, send):
+        # Skip non-HTTP (WebSocket, etc.)
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+
+        # Jeśli nie ustawiono klucza — przepuść bez sprawdzania
+        if not self.api_key:
+            await self.app(scope, receive, send)
+            return
+
+        # Zbierz nagłówki i znajdź X-API-Key
+        headers = dict(scope.get("headers", []))
+        request_key = headers.get(b"x-api-key", b"").decode()
+
+        if request_key != self.api_key:
+            log.warning(f"  🔒 ODRZUCONE (401)  |  {_fmt_ts()}  |  podany klucz: {_trunc(request_key, 20)}")
+            body = json.dumps({
+                "error": "Unauthorized",
+                "message": "Missing or invalid API key. Provide via X-API-Key header.",
+            }).encode()
+            await send({
+                "type": "http.response.start",
+                "status": 401,
+                "headers": [
+                    (b"content-type", b"application/json"),
+                    (b"x-accel-buffering", b"no"),
+                    (b"cache-control", b"no-cache, no-store, must-revalidate"),
+                ],
+            })
+            await send({
+                "type": "http.response.body",
+                "body": body,
+            })
+            return
+
+        await self.app(scope, receive, send)
 
 
 # ─── Middleware dla streamable-HTTP ───
@@ -244,7 +301,7 @@ CATEGORIES = DATA.get("categories", {})
 PATTERNS = DATA.get("patterns", {})
 
 # ── Load search index (FTS5 + technique embeddings) ──
-EMBED_DIR = Path(__file__).parent / "embeddings"
+EMB_DIR = Path(__file__).parent / "embeddings"
 
 SEARCH_DB = None
 TECH_EMBEDDINGS = None
@@ -253,15 +310,15 @@ UND_EMBEDDINGS = None
 UND_INDEX = None
 try:
     import sqlite3
-    SEARCH_DB = sqlite3.connect(str(EMBED_DIR / "search.db"), check_same_thread=False)
+    SEARCH_DB = sqlite3.connect(str(EMB_DIR / "search.db"), check_same_thread=False)
     SEARCH_DB.execute("PRAGMA query_only = 1")
 except Exception as e:
     log.warning(f"FTS5 index not available: {e}")
 
 try:
     import numpy as np
-    TECH_EMBEDDINGS = np.load(str(EMBED_DIR / "tech_embeddings.npy"))
-    with open(EMBED_DIR / "tech_index.json") as f:
+    TECH_EMBEDDINGS = np.load(str(EMB_DIR / "tech_embeddings.npy"))
+    with open(EMB_DIR / "tech_index.json") as f:
         TECH_INDEX = json.load(f)
     log.info(f"Loaded {TECH_EMBEDDINGS.shape[0]} technique embeddings ({TECH_EMBEDDINGS.shape[1]}d)")
 except Exception as e:
@@ -269,8 +326,8 @@ except Exception as e:
 
 try:
     import numpy as np
-    UND_EMBEDDINGS = np.load(str(EMBED_DIR / "und_embeddings.npy"))
-    with open(EMBED_DIR / "und_index.json") as f:
+    UND_EMBEDDINGS = np.load(str(EMB_DIR / "und_embeddings.npy"))
+    with open(EMB_DIR / "und_index.json") as f:
         UND_INDEX = json.load(f)
     log.info(f"Loaded {UND_EMBEDDINGS.shape[0]} understanding embeddings ({UND_EMBEDDINGS.shape[1]}d)")
 except Exception as e:
@@ -1049,7 +1106,7 @@ def list_patterns() -> str:
         url_str = f" — {apg}" if apg else ""
         lines.append(f"- **{pname}** — {name} ({nscs} SC){url_str}")
     lines.append("")
-    lines.append("💡 Użyj `get_pattern(\"nazwa\")` aby zobaczyć pełny wzorzec.")
+    lines.append('💡 Użyj `get_pattern("nazwa")` aby zobaczyć pełny wzorzec.')
 
     return "\n".join(lines)
 
@@ -1551,6 +1608,7 @@ def _graph_sort_key(nid: str) -> tuple:
         return (0, int(parts[0]), int(parts[1]) if len(parts) > 1 else 0, nid)
     return (1, 0, 0, nid)
 
+
 def main():
     parser = argparse.ArgumentParser(description="WCAG 2.2 MCP Server")
     parser.add_argument("--transport", choices=["stdio", "sse", "streamable-http"], default="stdio",
@@ -1559,13 +1617,22 @@ def main():
                         help="Host to bind (SSE/HTTP only, default: 127.0.0.1)")
     parser.add_argument("--port", type=int, default=9099,
                         help="Port to bind (SSE/HTTP only, default: 9099)")
+    parser.add_argument("--api-key", default="",
+                        help="API key for authentication. Also read from WCAG22_API_KEY env var.")
     args = parser.parse_args()
+
+    # Resolve API key: arg > env var > no auth
+    api_key = args.api_key or os.environ.get("WCAG22_API_KEY", "")
 
     log.info("=" * 72)
     log.info(f"  🚀 SERVER START  |  {_fmt_ts()}")
     log.info(f"  Dane: {COUNTS['scs']} SC, {COUNTS['techniques']} technik, "
              f"{COUNTS['definitions']} definicji, {COUNTS['understanding']} dokumentów")
     log.info(f"  Transport: {args.transport}  |  Log: {LOG_FILE}")
+    if api_key:
+        log.info(f"  🔒 API key: włączony (clients must send X-API-Key header)")
+    else:
+        log.info(f"  🔓 API key: wyłączony (brak zabezpieczenia)")
     log.info("=" * 72)
 
     print(f"WCAG 2.2 MCP Server starting...", file=__import__('sys').stderr)
@@ -1574,6 +1641,10 @@ def main():
           file=__import__('sys').stderr)
     print(f"  Transport: {args.transport}", file=__import__('sys').stderr)
     print(f"  Log: {LOG_FILE}", file=__import__('sys').stderr)
+    if api_key:
+        print(f"  🔒 API key authentication enabled", file=__import__('sys').stderr)
+    else:
+        print(f"  🔓 No API key — server is open", file=__import__('sys').stderr)
 
     if args.transport == "sse":
         import uvicorn
@@ -1583,6 +1654,16 @@ def main():
         
         class NoBufferMiddleware(BaseHTTPMiddleware):
             async def dispatch(self, request, call_next):
+                # Check API key for SSE
+                if api_key:
+                    request_key = request.headers.get("x-api-key", "")
+                    if request_key != api_key:
+                        from starlette.responses import JSONResponse
+                        log.warning(f"  🔒 ODRZUCONE (401) | {_fmt_ts()} | SSE | {request.client.host if request.client else '?'}")
+                        return JSONResponse(
+                            {"error": "Unauthorized", "message": "Missing or invalid API key."},
+                            status_code=401,
+                        )
                 response = await call_next(request)
                 response.headers["X-Accel-Buffering"] = "no"
                 response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
@@ -1598,7 +1679,8 @@ def main():
     elif args.transport == "streamable-http":
         import uvicorn
         raw_app = mcp.streamable_http_app()
-        app = MCPLogMiddleware(raw_app)
+        # Kolejność: API key (zewnętrzna) → logowanie → aplikacja MCP
+        app = APIKeyMiddleware(MCPLogMiddleware(raw_app), api_key)
         log.info(f"  Nasłuch: http://{args.host}:{args.port}/mcp")
         print(f"  Listening on http://{args.host}:{args.port}/mcp", file=__import__('sys').stderr)
         uvicorn.run(app, host=args.host, port=args.port, log_level="info")

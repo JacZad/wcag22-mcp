@@ -1,18 +1,23 @@
+# Dockerfile dla WCAG 2.2 MCP Server — Google Cloud Run (fast build)
 FROM python:3.12-slim
 
 WORKDIR /app
 
-# Kopiujemy i instalujemy zależności
+# Zależności Python
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Kopiujemy serwer i dane
+# Kod serwera + gotowe dane (pre-built)
 COPY server.py .
 COPY wcag-data.json .
 
-# Cloud Run ustawia PORT=8080
-ENV PORT=8080
+# Bez przebudowy — dane już wygenerowane lokalnie
 
+ENV PYTHONUNBUFFERED=1
 EXPOSE 8080
 
-CMD ["sh", "-c", "python3 server.py --transport streamable-http --port ${PORT} --host 0.0.0.0"]
+CMD exec python3 server.py \
+  --transport streamable-http \
+  --host 0.0.0.0 \
+  --port ${PORT:-8080} \
+  ${WCAG22_API_KEY:+--api-key "$WCAG22_API_KEY"}
