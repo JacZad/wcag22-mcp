@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "MCP server WCAG 2.2 — wyszukiwanie, definicje, techniki i knowledge graph."
 requires-python = ">=3.12"
 dependencies = [
-    "mcp>=1.0",
-    "uvicorn>=0.30",
+    "mcp>=1.9,<2",   # 2.x zmienia API: FastMCP → MCPServer
+    "uvicorn>=0.30,<1",
+    "networkx>=3.2,<4",
 ]

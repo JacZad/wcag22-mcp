@@ -1,2 +1,5 @@
-mcp>=1.0
-uvicorn>=0.30
+# UWAGA: mcp 2.x zmienia API (FastMCP → MCPServer). Kod używa FastMCP — trzymamy 1.x.
+mcp>=1.9,<2
+uvicorn>=0.30,<1
+# Wymagane przez narzędzia grafu (graph_query / graph_between / graph_categories)
+networkx>=3.2,<4
