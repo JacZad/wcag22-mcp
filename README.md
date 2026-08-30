@@ -40,7 +40,7 @@ Umożliwia asystentom AI (Hermes, Claude Code, Cursor, Copilot i inne) udzielani
 | **Wzorce ARIA APG** | Combobox, Dialog, Tooltip, Tree, Treegrid, Carousel i więcej — z kodem HTML, klawiaturą, zarządzaniem fokusem |
 | **Graf wiedzy** | Połączenia między SC, technikami, definicjami i kategoriami — szukaj powiązań i najkrótszych ścieżek |
 | **Kontrast** | Kalkulator WCAG AA/AAA dla hex kolorów |
-| **Wyszukiwanie hybrydowe** | FTS5 + embeddingi semantyczne (wymaga Ollama + nomic-embed-text) |
+| **Wyszukiwanie pełnotekstowe** | SQLite FTS5 po kryteriach, definicjach i technikach; zapytania PL i EN |
 | **API key** | Opcjonalne zabezpieczenie dla deploymentów publicznych |
 | **Logowanie** | Wszystkie żądania i odpowiedzi logowane do pliku |
 
@@ -50,10 +50,11 @@ Umożliwia asystentom AI (Hermes, Claude Code, Cursor, Copilot i inne) udzielani
 
 - **Python 3.10+**
 - **pip: `mcp`** (pakiet SDK) — `pip install mcp`
-- Opcjonalnie: `networkx` (graf), `numpy` (embeddingi), `ollama` (semantic search)
+- Opcjonalnie: `networkx` — narzędzia grafu (`graph_query`, `graph_between`, `graph_categories`)
+- Wyszukiwanie nie wymaga żadnej usługi zewnętrznej — indeks FTS5 jest wbudowany w `embeddings/search.db`
 
 ```bash
-pip install mcp networkx numpy
+pip install mcp networkx
 ```
 
 ---
@@ -68,7 +69,7 @@ cd hermes-mcp-wcag22
 # 2. (Opcjonalnie) Utwórz venv
 python3 -m venv .venv
 source .venv/bin/activate
-pip install mcp networkx numpy
+pip install mcp networkx
 
 # 3. Uruchom w trybie stdio (dla lokalnych klientów MCP)
 python3 server.py
@@ -171,7 +172,7 @@ Serwer udostępnia następujące narzędzia MCP:
 | `list_scs(level)` | Lista SC, opcjonalnie filtrowana (`"A"`, `"AA"`, `"AAA"`) |
 | `get_hierarchy(id)` | Zasada (1-4) lub wytyczna (np. `"2.4"`) z listą SC |
 | `check_contrast(fg, bg)` | Kalkulator kontrastu WCAG (hex) |
-| `search(query)` | Hybrydowe wyszukiwanie (FTS5 + embeddingi) |
+| `search(query)` | Wyszukiwanie pełnotekstowe FTS5 (kryteria, definicje, techniki; PL i EN) |
 | `get_pattern(name)` | Wzorzec ARIA APG (np. `"combobox"`, `"dialog"`, `"tooltip"`) |
 | `list_patterns()` | Lista dostępnych wzorców |
 | `graph_query(entity)` | Zapytanie do grafu wiedzy |
@@ -381,7 +382,7 @@ Każde żądanie i odpowiedź są logowane z timestampem, nazwą narzędzia, arg
 | `401 Unauthorized` | Brak/wrong API key | Dodaj `X-API-Key` do żądania |
 | `406 Not Acceptable` | Brak `Accept: application/json` | Klient MCP SDK wysyła go automatycznie |
 | `502 Bad Gateway` | Cloudflare nie ma dostępu do backendu | Sprawdź port i `originRequest` w configu |
-| Wyszukiwanie nie działa | Brak embeddingów | Uruchom Ollama z `nomic-embed-text` |
+| Wyszukiwanie zwraca „tryb awaryjny" | Brak `embeddings/search.db` w obrazie | Sprawdź `COPY` w Dockerfile, przebuduj: `python3 build_search_index.py` |
 
 ### Testowanie ręczne
 
@@ -423,12 +424,11 @@ curl -X POST http://127.0.0.1:9100/mcp \
 ├── server.py            # Serwer MCP (główny plik)
 ├── build_data.py        # Skrypt budujący wcag-data.json ze źródeł W3C
 ├── wcag-data.json       # Baza danych WCAG 2.2 (generowana)
-├── embeddings/          # Indeksy FTS5 + embeddingi (generowane)
-│   ├── search.db        # Baza SQLite FTS5
-│   ├── tech_embeddings.npy  # Embeddingi technik
-│   ├── tech_index.json
-│   ├── und_embeddings.npy   # Embeddingi Understanding
-│   └── und_index.json
+├── build_search_index.py # Skrypt budujący indeks FTS5
+├── smoke_test.py        # Test dymny wszystkich narzędzi (uruchamiany w Cloud Build)
+├── embeddings/          # Indeks wyszukiwania (generowany)
+│   ├── search.db        # Baza SQLite FTS5 — jedyny plik używany w czasie działania
+│   └── tech_index.json  # Podsumowania technik (materiał wejściowy dla indeksu)
 ├── patterns/            # Definicje wzorców ARIA APG (YAML/JSON)
 └── README.md
 ```

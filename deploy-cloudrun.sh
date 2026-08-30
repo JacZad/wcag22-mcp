@@ -11,7 +11,9 @@
 # Albo jednym poleceniem (buduje obraz w chmurze):
 #   gcloud run deploy wcag22-mcp --source . --region europe-central2 \
 #     --allow-unauthenticated --memory=512Mi --timeout=600 \
-#     --min-instances=0 --max-instances=3 --concurrency=10
+#     --min-instances=0 --max-instances=3 --concurrency=80
+#
+# Pełny pipeline z testem dymnym przed wdrożeniem: cloudbuild.yaml
 
 set -e
 
@@ -45,10 +47,11 @@ gcloud run deploy "$SERVICE_NAME" \
     --allow-unauthenticated \
     --memory=512Mi \
     --cpu=1 \
+    --cpu-boost \
     --timeout=600 \
     --min-instances=0 \
     --max-instances=3 \
-    --concurrency=10 \
+    --concurrency=80 \
     --port=8080
 
 echo ""
