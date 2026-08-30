@@ -136,28 +136,39 @@ def build_scs(sc_map):
         md = re.sub(r'^:::.*?sc.*\n', '', md, count=1)
         md = re.sub(r'\n:::$', '', md)
         
-        # Extract SC text (normative - before any definition lists from exceptions)
-        # The normative text is between the level line and the first definition term
-        lines = md.split('\n')
-        in_normative = False
-        normative_parts = []
-        exception_parts = []
-        in_exceptions = False
-        
-        for line in lines:
-            stripped = line.strip()
-            if stripped in ("A", "AA", "AAA") and len(stripped) <= 3:
-                in_normative = True
-                continue
-            if stripped.endswith(':') and not stripped.startswith(('#', '>', '-', '*', '`')):
-                # This looks like an exception label (e.g. "Controls, Input:")
-                if in_normative:
-                    in_normative = False
-                    in_exceptions = True
-            if in_normative:
-                normative_parts.append(line)
-            elif in_exceptions:
-                exception_parts.append(line)
+        # Split the SC into normative text and exceptions.
+        #
+        # Pandoc renders the exceptions as a definition list: the label sits on
+        # its own line and the body below it starts with ": ". The previous
+        # version looked for a trailing colon to spot the label — but it is the
+        # normative sentence that usually ends in one ("except for the
+        # following:"), so 17 criteria lost their normative text to the
+        # exceptions block, and 1.1.1 swallowed its exceptions the other way.
+        # The definition marker is unambiguous, so we cut on that instead.
+        lines = [ln for ln in md.split('\n') if ln.strip() != ':::']
+
+        level_idx = next((i for i, ln in enumerate(lines)
+                          if ln.strip() in ("A", "AA", "AAA")), None)
+        body = lines[level_idx + 1:] if level_idx is not None else lines
+
+        # Kryteria wycofane (4.1.1) nie mają wiersza z poziomem, więc zostaje im
+        # nagłówek tytułowy — tytuł trzymamy osobno, tu jest zbędny.
+        while body and (not body[0].strip() or body[0].lstrip().startswith("#")):
+            body = body[1:]
+
+        def_idx = next((i for i, ln in enumerate(body) if re.match(r'^:\s', ln)), None)
+
+        if def_idx is None:
+            normative_parts, exception_parts = body, []
+        else:
+            # Etykieta wyjątku to ostatni niepusty wiersz przed treścią definicji.
+            label_idx = def_idx - 1
+            while label_idx >= 0 and not body[label_idx].strip():
+                label_idx -= 1
+            if label_idx < 0:
+                label_idx = def_idx
+            normative_parts = body[:label_idx]
+            exception_parts = body[label_idx:]
         
         scs[sc_id] = {
             "id": sc_id,
@@ -193,9 +204,20 @@ def build_techniques():
             if not md:
                 continue
             
-            # Extract ID from meta section
+            # Extract ID from meta section. Upstream źródło bywa uszkodzone —
+            # techniques/general/G214.html deklaruje "ID: @@G210", przez co
+            # technika G214 znikała z danych, a jej treść trafiała pod klucz
+            # kolidujący z prawdziwym G210. Nazwa pliku jest wiarygodniejsza,
+            # więc deklarowane ID przyjmujemy tylko, gdy ma poprawny kształt.
             m = re.search(r'^ID:\s*(.+)$', md, re.MULTILINE)
-            tid = m.group(1).strip() if m else fpath.stem
+            declared = m.group(1).strip() if m else ""
+            if re.fullmatch(r'[A-Za-z]+\d+', declared):
+                tid = declared
+            else:
+                if declared:
+                    print(f"  ⚠ {fpath.name}: nieprawidłowe ID '{declared}' — używam nazwy pliku",
+                          file=sys.stderr)
+                tid = fpath.stem
             
             # Extract type from meta
             m = re.search(r'^Type:\s*(.+)$', md, re.MULTILINE)
