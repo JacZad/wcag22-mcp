@@ -19,3 +19,12 @@ sc_map.py
 
 # Embedded repo
 wcag-repo/
+
+# WCAG build pipeline artifacts (regenerable; keep only runtime data in embeddings/)
+embeddings/checkpoint_*
+embeddings/tech_for_summary.json
+embeddings/tech_structured.json
+embeddings/tech_summaries_*.json
+embeddings/embeddings-data.json
+embeddings/results.json
+embeddings/test_queries.json
