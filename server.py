@@ -16,11 +16,14 @@ API key protection (optional):
 """
 
 import argparse
+import hmac
 import json
 import logging
 import os
 import re
+import sys
 import time
+import unicodedata
 from datetime import datetime
 from pathlib import Path
 
@@ -28,22 +31,40 @@ try:
     from mcp.server.fastmcp import FastMCP
     from mcp.server.transport_security import TransportSecuritySettings
 except ImportError:
-    print("ERROR: mcp package not installed. Run: pip install mcp")
-    exit(1)
+    print("ERROR: mcp package not installed. Run: pip install mcp", file=sys.stderr)
+    sys.exit(1)
 
 # ── Logging ──
 
+# Cloud Run ustawia K_SERVICE. Tam system plików to tmpfs liczony do limitu
+# pamięci, a plik logu i tak nie trafia do Cloud Logging — więc w chmurze
+# logujemy wyłącznie na stderr. Lokalnie zostaje plik plus stderr dla ostrzeżeń.
+IN_CLOUD_RUN = bool(os.environ.get("K_SERVICE"))
+
 LOG_DIR = Path.home() / ".hermes" / "logs"
-LOG_DIR.mkdir(parents=True, exist_ok=True)
 LOG_FILE = LOG_DIR / "wcag22-mcp.log"
 
 log = logging.getLogger("wcag22")
 log.setLevel(logging.INFO)
-fh = logging.FileHandler(LOG_FILE, mode="a", encoding="utf-8")
-fh.setLevel(logging.INFO)
-log.addHandler(fh)
 # Nie propaguj do root loggera (nie mieszaj z stderr serwera)
 log.propagate = False
+
+# stdio używa stdout na protokół, więc stderr jest bezpieczny w każdym trybie.
+sh = logging.StreamHandler(sys.stderr)
+sh.setLevel(logging.INFO if IN_CLOUD_RUN else logging.WARNING)
+sh.setFormatter(logging.Formatter("[wcag22] %(levelname)s: %(message)s"))
+log.addHandler(sh)
+
+if not IN_CLOUD_RUN:
+    try:
+        LOG_DIR.mkdir(parents=True, exist_ok=True)
+        fh = logging.FileHandler(LOG_FILE, mode="a", encoding="utf-8")
+        fh.setLevel(logging.INFO)
+        log.addHandler(fh)
+    except OSError as e:
+        # Katalog domowy bywa niezapisywalny — to nie powód, żeby nie wstać.
+        LOG_FILE = None
+        log.warning(f"Nie mogę pisać do pliku logu: {e}")
 
 
 def _fmt_ts():
@@ -150,9 +171,11 @@ class APIKeyMiddleware:
 
         # Zbierz nagłówki i znajdź X-API-Key
         headers = dict(scope.get("headers", []))
-        request_key = headers.get(b"x-api-key", b"").decode()
+        request_key = headers.get(b"x-api-key", b"").decode("utf-8", "replace")
 
-        if request_key != self.api_key:
+        # compare_digest zamiast != — stały czas porównania, bez wycieku
+        # informacji o tym, ile znaków klucza się zgadza.
+        if not hmac.compare_digest(request_key.encode("utf-8"), self.api_key.encode("utf-8")):
             log.warning(f"  🔒 ODRZUCONE (401)  |  {_fmt_ts()}  |  podany klucz: {_trunc(request_key, 20)}")
             body = json.dumps({
                 "error": "Unauthorized",
@@ -177,6 +200,10 @@ class APIKeyMiddleware:
 
 
 # ─── Middleware dla streamable-HTTP ───
+
+# Ile bajtów odpowiedzi zatrzymać na potrzeby logu
+_LOG_BODY_LIMIT = 4096
+
 
 class MCPLogMiddleware:
     """
@@ -237,19 +264,21 @@ class MCPLogMiddleware:
                     "body": body,
                     "more_body": False,
                 }
-            return {"type": "http.disconnect"}
+            # Dalej oddajemy sterowanie prawdziwemu receive. Zwracanie tutaj
+            # http.disconnect kazało Starlette anulować strumień odpowiedzi,
+            # bo nasłuch rozłączenia biegnie równolegle z jej wysyłaniem.
+            return await receive()
 
         # Mierz czas
         start = time.time()
-        response_headers = {}
         response_chunks = []
+        response_bytes = 0
 
         async def passthrough_send(msg):
-            """Przepuść odpowiedź z anti-buffering headers i zbierz treść."""
-            nonlocal response_headers, response_chunks
-            
+            """Przepuść odpowiedź z anti-buffering headers i zbierz próbkę treści."""
+            nonlocal response_chunks, response_bytes
+
             if msg["type"] == "http.response.start":
-                response_headers = dict(msg.get("headers", []))
                 # Dodaj nagłówki zapobiegające buforowaniu przez Cloudflare/proxy
                 h = list(msg.get("headers", []))
                 sent_headers = {k.lower() for k, _ in h}
@@ -265,8 +294,13 @@ class MCPLogMiddleware:
                 msg["headers"] = h
             
             elif msg["type"] == "http.response.body":
-                response_chunks.append(msg.get("body", b""))
-            
+                chunk = msg.get("body", b"")
+                response_bytes += len(chunk)
+                # Do logu wystarczy początek — nie kopiujemy całej odpowiedzi,
+                # która przy get_understanding(full=True) ma kilkadziesiąt KB.
+                if response_bytes <= _LOG_BODY_LIMIT:
+                    response_chunks.append(chunk)
+
             await send(msg)
 
         try:
@@ -277,17 +311,16 @@ class MCPLogMiddleware:
             raise
 
         elapsed_ms = int((time.time() - start) * 1000)
-        # Log response — pełna treść (json_response daje Content-Length)
-        resp_body = b"".join(response_chunks)
-        resp_text = resp_body.decode("utf-8", errors="replace") if resp_body else ""
-        log_response(tool_name, elapsed_ms, resp_text, error=None, truncated=len(resp_body) > 2000)
+        resp_text = b"".join(response_chunks).decode("utf-8", errors="replace")
+        log_response(tool_name, elapsed_ms, resp_text, error=None,
+                     truncated=response_bytes > _LOG_BODY_LIMIT)
 
 
 # ── Load data ──
 
 DATA_PATH = Path(__file__).parent / "wcag-data.json"
 
-with open(DATA_PATH) as f:
+with open(DATA_PATH, encoding="utf-8") as f:
     DATA = json.load(f)
 
 SCS = DATA["scs"]
@@ -300,38 +333,24 @@ COUNTS = DATA["counts"]
 CATEGORIES = DATA.get("categories", {})
 PATTERNS = DATA.get("patterns", {})
 
-# ── Load search index (FTS5 + technique embeddings) ──
-EMB_DIR = Path(__file__).parent / "embeddings"
+# ── Load search index (FTS5) ──
+INDEX_DIR = Path(__file__).parent / "embeddings"
+EMB_DIR = INDEX_DIR  # zachowana stara nazwa dla zgodności
 
 SEARCH_DB = None
-TECH_EMBEDDINGS = None
-TECH_INDEX = None
-UND_EMBEDDINGS = None
-UND_INDEX = None
 try:
     import sqlite3
-    SEARCH_DB = sqlite3.connect(str(EMB_DIR / "search.db"), check_same_thread=False)
-    SEARCH_DB.execute("PRAGMA query_only = 1")
+    _db_path = EMB_DIR / "search.db"
+    if not _db_path.is_file():
+        # sqlite3.connect() na nieistniejącej ścieżce tworzy pustą bazę bez błędu,
+        # przez co brak indeksu ujawniał się dopiero jako ciche zero wyników.
+        raise FileNotFoundError(f"brak pliku {_db_path}")
+    SEARCH_DB = sqlite3.connect(f"{_db_path.as_uri()}?mode=ro", uri=True, check_same_thread=False)
+    _n_docs = SEARCH_DB.execute("SELECT count(*) FROM docs").fetchone()[0]
+    log.info(f"Loaded FTS5 index: {_n_docs} documents from {_db_path.name}")
 except Exception as e:
+    SEARCH_DB = None
     log.warning(f"FTS5 index not available: {e}")
-
-try:
-    import numpy as np
-    TECH_EMBEDDINGS = np.load(str(EMB_DIR / "tech_embeddings.npy"))
-    with open(EMB_DIR / "tech_index.json") as f:
-        TECH_INDEX = json.load(f)
-    log.info(f"Loaded {TECH_EMBEDDINGS.shape[0]} technique embeddings ({TECH_EMBEDDINGS.shape[1]}d)")
-except Exception as e:
-    log.warning(f"Technique embeddings not available: {e}")
-
-try:
-    import numpy as np
-    UND_EMBEDDINGS = np.load(str(EMB_DIR / "und_embeddings.npy"))
-    with open(EMB_DIR / "und_index.json") as f:
-        UND_INDEX = json.load(f)
-    log.info(f"Loaded {UND_EMBEDDINGS.shape[0]} understanding embeddings ({UND_EMBEDDINGS.shape[1]}d)")
-except Exception as e:
-    log.warning(f"Understanding embeddings not available: {e}")
 
 # Build reverse maps
 SC_ID_TO_SLUG = {sc["id"]: sc["slug"] for sc in SCS.values()}
@@ -428,6 +447,57 @@ SC_PL = {
     '4.1.3': 'Komunikaty o stanie',
 }
 
+# ── Lookup indexes ──
+
+_PL_FOLD = str.maketrans("ąćęłńóśźżĄĆĘŁŃÓŚŹŻ", "acelnoszzACELNOSZZ")
+
+
+def _norm_key(text):
+    """
+    Klucz porównawczy: małe litery ASCII, bez spacji i interpunkcji.
+
+    Polskie znaki są transliterowane, nie usuwane — inaczej "pominięcia"
+    zwijałoby się do "pominicia" i łapało przypadkowe zapytania.
+    """
+    folded = unicodedata.normalize("NFKD", str(text).translate(_PL_FOLD))
+    folded = "".join(c for c in folded if not unicodedata.combining(c))
+    return re.sub(r"[^a-z0-9]+", "", folded.lower())
+
+
+# Techniki po znormalizowanym ID. Klucze z prefiksem "@@" (artefakt parsera)
+# ustępują pierwszeństwa normalnym, dlatego sortujemy je na koniec.
+TECH_BY_NORM = {}
+for _tid in sorted(TECHNIQUES, key=lambda k: (k.startswith("@@"), k)):
+    TECH_BY_NORM.setdefault(_norm_key(_tid), _tid)
+
+# Tytuły technik — pierwszy nagłówek "# ..." w treści. Techniki nie mają
+# osobnego pola z tytułem, a bez niego graf pokazywał tylko surowe ID.
+_TECH_TITLE_RE = re.compile(r"^\s*#\s+(.+?)\s*$", re.MULTILINE)
+TECH_TITLES = {}
+for _tid, _tech in TECHNIQUES.items():
+    _m = _TECH_TITLE_RE.search(_tech.get("content_md", ""))
+    TECH_TITLES[_tid] = _m.group(1).strip() if _m else _tid
+
+# Kryteria po ID, slugu oraz tytule angielskim i polskim.
+SC_BY_NORM = {}
+# Poszczególne słowa aliasów — do dopasowania częściowego. Dopasowujemy tylko
+# początek słowa, bo szukanie podciągu w całym aliasie dawało trafienia
+# przypadkowe ("nic" wewnątrz "ograniczeń").
+SC_ALIAS_WORDS = []
+for _sc_id, _sc in SCS.items():
+    for _alias in (_sc_id, _sc.get("slug", ""), _sc.get("title", ""), SC_PL.get(_sc_id, "")):
+        if not _alias:
+            continue
+        _norm_alias = _norm_key(_alias)
+        if not _norm_alias:
+            continue
+        SC_BY_NORM.setdefault(_norm_alias, _sc_id)
+        for _word in re.split(r"[\s\-_/(),.]+", _alias):
+            _norm_word = _norm_key(_word)
+            if _norm_word:
+                SC_ALIAS_WORDS.append((_norm_word, len(_norm_alias), _sc_id))
+
+
 # ── Build knowledge graph (NetworkX) ──
 
 GRAPH = None
@@ -445,6 +515,7 @@ try:
     # Add technique nodes
     for tid, tech in TECHNIQUES.items():
         G.add_node("T:" + tid, type="technique",
+                   title=TECH_TITLES.get(tid, tid),
                    category=tech.get("category", ""),
                    tech_type=tech.get("type", ""),
                    wid=tid)
@@ -453,12 +524,14 @@ try:
             if sc_id in SCS:
                 G.add_edge("T:" + tid, "SC:" + sc_id, relation="applies_to")
 
-    # Add SC → technique edges (reverse)
+    # Add SC → technique edges (reverse). Indeks tech_by_sc zawiera także błędy,
+    # więc wykluczamy je tutaj, żeby jedna technika nie dostała dwóch krawędzi.
     for sc_id, tech_ids in INDEXES.get("tech_by_sc", {}).items():
         if sc_id not in SCS:
             continue
+        failures_here = set(INDEXES.get("failures_by_sc", {}).get(sc_id, []))
         for tid in tech_ids:
-            if tid in TECHNIQUES:
+            if tid in TECHNIQUES and tid not in failures_here:
                 G.add_edge("SC:" + sc_id, "T:" + tid, relation="has_technique")
 
     # Add failure edges
@@ -512,11 +585,18 @@ try:
         for term_lower, dnode in def_node_map.items():
             if term_lower in md:
                 G.add_edge("T:" + tid, dnode, relation="references")
-                break  # one edge per technique per definition is enough
 
-    # Edge: SC → definition (from normative text or understanding)
+    # Edge: SC → definition. Bierzemy też exceptions_md, bo dla 17 kryteriów
+    # to tam wylądowała treść normatywna (błąd podziału w build_data.py).
+    def _sc_haystack(sc):
+        return " ".join((
+            sc.get("normative_md", ""),
+            sc.get("exceptions_md", ""),
+            sc.get("understanding_full_md", ""),
+        )).lower()
+
     for sc_id, sc in SCS.items():
-        haystack = (sc.get("normative_md", "") + " " + sc.get("understanding_md", "")).lower()
+        haystack = _sc_haystack(sc)
         for term_lower, dnode in def_node_map.items():
             if term_lower in haystack:
                 G.add_edge("SC:" + sc_id, dnode, relation="references")
@@ -537,7 +617,7 @@ try:
     # Edge: SC ↔ SC via shared definitions (co-occurrence)
     sc_defs = {}
     for sc_id, sc in SCS.items():
-        haystack = (sc.get("normative_md", "") + " " + sc.get("understanding_md", "")).lower()
+        haystack = _sc_haystack(sc)
         sc_defs[sc_id] = set()
         for term_lower in def_node_map:
             if term_lower in haystack:
@@ -580,16 +660,29 @@ def _contrast_ratio(hex1, hex2):
 
 
 def _resolve(identifier):
-    """Resolve '1.1.1' or 'non-text-content' to an SC ID."""
-    identifier = identifier.strip().lower()
-    if identifier in SCS:
-        return identifier
-    if identifier in SC_ID_TO_SLUG:
-        return identifier
-    for sc_id, sc in SCS.items():
-        if identifier in sc["slug"] or identifier in sc["title"].lower():
-            return sc_id
-    return None
+    """
+    Zamień ID ('1.1.1'), slug ('non-text-content') albo tytuł — angielski lub
+    polski ('Kontrast (minimalny)') — na ID kryterium sukcesu.
+    """
+    raw = str(identifier).strip()
+    if raw in SCS:
+        return raw
+
+    key = _norm_key(raw)
+    if not key:
+        return None
+    if key in SC_BY_NORM:
+        return SC_BY_NORM[key]
+
+    # Dopasowanie częściowe: zapytanie musi być początkiem któregoś słowa tytułu
+    # lub slugu. Wygrywa najkrótszy alias, przy remisie najniższe ID — żeby wynik
+    # był powtarzalny, a nie zależny od kolejności w słowniku.
+    # Krótkie klucze pomijamy: "1" to zasada, a nie kryterium (patrz get_hierarchy).
+    if len(key) < 3:
+        return None
+    candidates = [(alias_len, sc_id) for word, alias_len, sc_id in SC_ALIAS_WORDS
+                  if word.startswith(key)]
+    return min(candidates)[1] if candidates else None
 
 
 def _snippet(text, query, max_len=150):
@@ -613,6 +706,11 @@ def _snippet(text, query, max_len=150):
 mcp = FastMCP(
     "WCAG 2.2 MCP Server",
     json_response=True,
+    # Bez tego FastMCP trzyma sesję w pamięci instancji. Na Cloud Run przy
+    # kilku instancjach i bez session affinity kolejne żądanie tego samego
+    # klienta trafia gdzie indziej i dostaje "No valid session ID". Wszystkie
+    # narzędzia tutaj są bezstanowe, więc nie tracimy niczego.
+    stateless_http=True,
     transport_security=TransportSecuritySettings(
         enable_dns_rebinding_protection=False,
     ),
@@ -648,11 +746,9 @@ def get_sc(identifier: str) -> str:
         lines.append("")
         lines.append("## Exceptions")
         lines.append(sc['exceptions_md'])
-    if sc.get('understanding_md'):
-        lines.append("")
-        lines.append("## Understanding")
-        lines.append(sc['understanding_md'])
-    
+    lines.append("")
+    lines.append(f'💡 Objaśnienie i przykłady: get_understanding("{sc["id"]}")')
+    lines.append(f'🔧 Techniki: get_techniques("{sc["id"]}")')
     lines.append("")
     lines.append(f"📖 [View on W3C]({sc.get('w3c_url', '#')})")
     
@@ -667,17 +763,31 @@ def get_definition(term: str) -> str:
     Examples: "assistive technology", "keyboard interface", "text alternative"
     Returns the definition as Markdown from the WCAG 2.2 glossary.
     """
-    key = term.strip().lower()
-    # Direct match
-    defn = DEFINITIONS.get(key)
+    raw = term.strip()
+    words = [w for w in re.split(r"[^a-z0-9]+", raw.lower()) if w]
+
+    # 1. trafienie dokładne, 2. po pominięciu spacji i interpunkcji
+    defn = DEFINITIONS.get(raw.lower())
     if not defn:
-        # Partial match
-        for k, v in DEFINITIONS.items():
-            if key in k or k in key:
-                defn = v
-                break
+        exact_norm = next((t for t in DEFINITIONS if _norm_key(t) == _norm_key(raw)), None)
+        if exact_norm:
+            defn = DEFINITIONS[exact_norm]
+
+    # 3. wszystkie słowa zapytania muszą wystąpić jako pełne słowa hasła —
+    #    dopasowanie po podciągu myliło np. "AT" z "focus indic-at-or"
+    if not defn and words and any(len(w) > 1 for w in words):
+        matches = []
+        for candidate in DEFINITIONS:
+            cand_words = [w for w in re.split(r"[^a-z0-9]+", candidate.lower()) if w]
+            if all(w in cand_words for w in words):
+                matches.append((len(cand_words), len(candidate), candidate))
+        if matches:
+            defn = DEFINITIONS[min(matches)[2]]
+
     if not defn:
-        return f"Term '{term}' not found."
+        near = sorted({t for t in DEFINITIONS for w in words if w in t.lower()})[:6]
+        hint = f" Podobne hasła: {', '.join(near)}." if near else ""
+        return f"Term '{term}' not found.{hint}"
     
     lines = [f"## {defn['term']}", "", defn['definition_md']]
     if defn.get('details'):
@@ -725,16 +835,15 @@ def get_techniques(identifier: str) -> str:
         for tid in sorted(sufficient):
             tech = TECHNIQUES.get(tid, {})
             cat = tech.get("category", "")
-            ttype = tech.get("type", "technique")
-            lines.append(f"- **{tid}** ({cat}) — {ttype}")
-    
+            lines.append(f"- **{tid}** ({cat}) — {TECH_TITLES.get(tid, '')}")
+
     if failures:
         lines.append("")
         lines.append("## Common Failures")
         for fid in sorted(failures):
             tech = TECHNIQUES.get(fid, {})
             cat = tech.get("category", "")
-            lines.append(f"- **{fid}** ({cat})")
+            lines.append(f"- **{fid}** ({cat}) — {TECH_TITLES.get(fid, '')}")
     
     lines.append("")
     lines.append(f"📖 Full list: https://www.w3.org/WAI/WCAG22/Techniques/")
@@ -755,14 +864,14 @@ def get_technique(technique_id: str) -> str:
     tid = technique_id.strip()
     tech = TECHNIQUES.get(tid)
     if not tech:
-        # Try without leading @@
-        for k, v in TECHNIQUES.items():
-            if k.endswith(tid):
-                tech = v
-                tid = k
-                break
+        # Dopasowanie bez względu na wielkość liter i separatory (g18, ARIA-1, @@G210).
+        resolved = TECH_BY_NORM.get(_norm_key(tid))
+        if resolved:
+            tid, tech = resolved, TECHNIQUES[resolved]
     if not tech:
-        return f"Technique '{technique_id}' not found."
+        return (f"Technique '{technique_id}' not found. Expected an id such as "
+                f"G18, H37, ARIA1, C45 or F78 — use get_techniques(\"<kryterium>\") "
+                f"to list the techniques for a success criterion.")
     
     lines = [
         f"# {tid}",
@@ -789,32 +898,40 @@ def check_contrast(foreground: str, background: str) -> str:
     Examples: check_contrast("#047857", "#FFFFFF"), check_contrast("000000", "fff")
     Returns contrast ratio and pass/fail for AA and AAA levels.
     """
-    fg = foreground.lstrip('#')
-    bg = background.lstrip('#')
-    
-    for name, val in [("foreground", fg), ("background", bg)]:
-        if not re.match(r'^[0-9A-Fa-f]{6}$', val):
-            return f"Invalid {name} color '{foreground}'. Use 6-digit hex (e.g. #047857 or 047857)."
-    
+    parsed = {}
+    for name, raw in (("foreground", foreground), ("background", background)):
+        value = raw.strip().lstrip('#')
+        if re.fullmatch(r'[0-9A-Fa-f]{3}', value):
+            value = ''.join(c * 2 for c in value)   # #fff → #ffffff
+        if not re.fullmatch(r'[0-9A-Fa-f]{6}', value):
+            return (f"Invalid {name} color '{raw}'. "
+                    f"Use 3- or 6-digit hex (e.g. #047857, 047857, #fff).")
+        parsed[name] = value.upper()
+
+    fg, bg = parsed["foreground"], parsed["background"]
     ratio = _contrast_ratio(f'#{fg}', f'#{bg}')
-    
-    lines = [
+
+    def verdict(threshold):
+        return f"{'✅' if ratio >= threshold else '❌'} wymagane {threshold}:1"
+
+    return "\n".join([
         f"# Kontrast: {ratio:.2f}:1",
-        f"",
-        f"| Foreground | `#{fg.upper()}` |",
-        f"| Background | `#{bg.upper()}` |",
-        f"| Ratio | **{ratio:.2f}:1** |",
-        f"",
-        f"## Wynik (WCAG 2.2)",
-        f"| Poziom | Normal text (≥4.5:1) | Large text (≥3:1) |",
-        f"|---|---|---|",
-        f"| **AA** | {'✅' if ratio >= 4.5 else '❌'} {ratio:.2f}:1 | {'✅' if ratio >= 3 else '❌'} {ratio:.2f}:1 |",
-        f"| **AAA** | {'✅' if ratio >= 7 else '❌'} {ratio:.2f}:1 | {'✅' if ratio >= 4.5 else '❌'} {ratio:.2f}:1 |",
-        f"",
-        f"*Large text = bold ≥14pt or regular ≥18pt (≈18.66px CSS).*",
-    ]
-    
-    return "\n".join(lines)
+        "",
+        "| | Kolor |",
+        "|---|---|",
+        f"| Tekst | `#{fg}` |",
+        f"| Tło | `#{bg}` |",
+        "",
+        "## Wynik (WCAG 2.2)",
+        "",
+        "| Poziom | Tekst zwykły | Tekst duży | Elementy nietekstowe |",
+        "|---|---|---|---|",
+        f"| **AA** | {verdict(4.5)} | {verdict(3)} | {verdict(3)} |",
+        f"| **AAA** | {verdict(7)} | {verdict(4.5)} | — |",
+        "",
+        "*Tekst duży = od 18 pt (ok. 24 px) lub od 14 pt pogrubiony (ok. 18,66 px).*",
+        "*Elementy nietekstowe (1.4.11): komponenty interfejsu i elementy graficzne.*",
+    ])
 
 
 @mcp.tool()
@@ -830,7 +947,7 @@ def get_failures(identifier: str) -> str:
     sc = SCS.get(sc_id, {})
     
     title = f"{sc.get('id', '')} — {sc.get('title', identifier)}" if sc else identifier
-    header = f"# Common Failures for {title}\\n"
+    header = f"# Common Failures for {title}\n"
     
     # Collect failures: from failures_by_sc + F-prefix techniques from tech_by_sc
     failures = set(INDEXES.get("failures_by_sc", {}).get(sc_id, []))
@@ -856,27 +973,47 @@ def get_failures(identifier: str) -> str:
 
 
 @mcp.tool()
-def get_understanding(identifier: str) -> str:
+def get_understanding(identifier: str, full: bool = False) -> str:
     """
     Get the Understanding document for a WCAG 2.2 success criterion.
-    
-    Examples: "1.4.3", "non-text-content", "2.4.11"
-    Returns the full Understanding doc as Markdown.
+
+    By default returns a condensed summary (about 2 KB). Pass full=True for the
+    complete W3C document, which can run to 40 KB — ask for it only when the
+    summary is not enough.
+
+    Examples: get_understanding("1.4.3"), get_understanding("2.4.11", full=True)
     """
     sc_id = _resolve(identifier) or identifier
     sc = SCS.get(sc_id)
-    
+
     if not sc:
         return f"SC '{identifier}' not found."
-    
-    full_md = sc.get("understanding_full_md", "")
-    if full_md:
-        return f"# {sc.get('title', '')}\n\n{full_md}\n\n📖 [Full understanding]({sc.get('w3c_url', '#')})"
-    
+
+    title = sc.get("title", "")
+    pl_title = SC_PL.get(sc_id, "")
+    heading = f"# {sc_id} — {title}" + (f"  |  {pl_title}" if pl_title else "")
+    url = sc.get("w3c_url", "#")
+
     short_md = sc.get("understanding_short_md", "")
+    full_md = sc.get("understanding_full_md", "")
+
+    if full:
+        body = full_md or short_md
+        if not body:
+            return f"No understanding document for '{identifier}'."
+        return f"{heading}\n\n{body}\n\n📖 [Full understanding]({url})"
+
     if short_md:
-        return f"# {sc.get('title', '')} (streszczenie)\n\n{short_md}\n\n📖 [Full understanding]({sc.get('w3c_url', '#')})"
-    
+        hint = ""
+        if full_md and len(full_md) > len(short_md):
+            hint = (f'\n\n💡 To streszczenie ({len(short_md)} znaków). '
+                    f'Pełny dokument ({len(full_md)} znaków): '
+                    f'get_understanding("{sc_id}", full=True)')
+        return f"{heading} — streszczenie\n\n{short_md}{hint}\n\n📖 [Full understanding]({url})"
+
+    if full_md:
+        return f"{heading}\n\n{full_md}\n\n📖 [Full understanding]({url})"
+
     return f"No understanding document for '{identifier}'."
 
 
@@ -1111,198 +1248,133 @@ def list_patterns() -> str:
     return "\n".join(lines)
 
 
+# Wagi bm25 kolumn indeksu: id, type, title, title_pl, level, category, text
+_BM25 = "bm25(docs, 5.0, 0.0, 10.0, 10.0, 0.0, 0.0, 1.0)"
+_FTS_STRIP = re.compile(r"[^\w-]+", re.UNICODE)
+_SEARCH_LIMITS = {"sc": 8, "definition": 4, "technique": 8}
+_SEARCH_HEADINGS = {
+    "sc": ("🎯", "Kryteria sukcesu"),
+    "definition": ("📖", "Definicje"),
+    "technique": ("🔧", "Techniki i błędy"),
+}
+
+
+def _fts_query(raw):
+    """Zamień zapytanie użytkownika na bezpieczne wyrażenie FTS5 (prefiksowe OR)."""
+    words = [w for w in _FTS_STRIP.sub(" ", raw).split() if len(w) > 1]
+    return " OR ".join(f'"{w}"*' for w in words)
+
+
+def _search_fallback(query, started_at):
+    """Wyszukiwanie awaryjne, gdy indeks FTS5 jest niedostępny."""
+    needle = query.lower()
+    scs, techs = [], []
+
+    for sc_id, sc in SCS.items():
+        title = sc.get("title", "")
+        pl_title = SC_PL.get(sc_id, "")
+        haystack = " ".join((title, pl_title, sc.get("normative_md", ""),
+                             sc.get("exceptions_md", ""))).lower()
+        score = haystack.count(needle) * 2
+        if needle in title.lower() or needle in pl_title.lower():
+            score += 5
+        if score:
+            scs.append((score, sc_id, title, pl_title, sc.get("level", "")))
+
+    for tid, tech in TECHNIQUES.items():
+        if needle in tid.lower() or needle in tech.get("content_md", "").lower():
+            techs.append((tid, tech.get("category", "")))
+
+    scs.sort(reverse=True)
+    scs = scs[:_SEARCH_LIMITS["sc"]]
+    techs = sorted(techs)[:_SEARCH_LIMITS["technique"]]
+
+    elapsed_ms = (time.time() - started_at) * 1000
+    lines = [f'# Search: "{query}" — {len(scs) + len(techs)} matches '
+             f'({elapsed_ms:.0f}ms, tryb awaryjny bez indeksu)']
+    if scs:
+        lines += ["", "## Kryteria sukcesu"]
+        for _score, sc_id, title, pl_title, level in scs:
+            label = f"{title} / {pl_title}" if pl_title else title
+            lines.append(f"🎯 **{sc_id}** — {label} ({level})")
+    if techs:
+        lines += ["", "## Techniki i błędy"]
+        for tid, category in techs:
+            lines.append(f"🔧 **{tid}** ({category})")
+    if not scs and not techs:
+        lines += ["", "Nic nie znaleziono."]
+    return "\n".join(lines)
+
+
 @mcp.tool()
 def search(query: str) -> str:
     """
-    Search WCAG 2.2 content using hybrid FTS5 + semantic embedding.
-    
-    QUERY MUST BE IN ENGLISH. The underlying data is entirely English.
-    Translate from other languages before calling this tool.
-    
-    - SCs + definitions: FTS5 full-text search
-    - Techniques: semantic embedding search on summaries
-    
-    Examples: "contrast", "keyboard focus", "text alternative"
-    Returns top 15 results with type, ID, and snippet.
+    Search WCAG 2.2 content: success criteria, glossary terms and techniques.
+
+    Full-text search (SQLite FTS5) over the criteria, their Understanding
+    summaries, the glossary and the technique summaries. English works
+    everywhere; the Polish titles of the success criteria are indexed as well,
+    so "kontrast" or "przeciaganie" find the right criterion too. Diacritics
+    are optional.
+
+    Examples: "contrast", "keyboard focus", "text alternative", "kontrast"
+    Returns matches grouped by kind, each with a snippet showing the hit.
     """
     q = query.strip()
     if not q:
         return "Empty query."
-    
-    _start = time.time()
-    results = []
-    
-    # ── 1. FTS5 search: SCs ──
-    if SEARCH_DB is not None:
-        try:
-            # FTS5: prefix phrase matching
-            fts_query = " OR ".join(f'"{w}"*' for w in q.split() if len(w) > 1)
-            if fts_query:
-                cursor = SEARCH_DB.execute(
-                    "SELECT id, type, title, level, rank FROM docs WHERE docs MATCH ? AND type='sc' ORDER BY rank LIMIT 10",
-                    (fts_query,)
-                )
-                for row in cursor.fetchall():
-                    sc_id, typ, title, level, rank = row
-                    # BM25 rank is negative; better = more negative
-                    # Normalize to 0-1 and add title boost
-                    score = 8 + max(0, -rank / 15.0)  # ~8-9 range
-                    pl_title = SC_PL.get(sc_id, title)
-                    results.append({
-                        "type": "sc", "id": sc_id,
-                        "title": f"{title} / {pl_title}",
-                        "level": level, "score": score,
-                    })
-            
-            # Definitions: only match when the TERM contains query words
-            cursor = SEARCH_DB.execute(
-                "SELECT id FROM docs WHERE type='definition'",
-            )
-            all_defs = [r[0] for r in cursor.fetchall()]
-            q_lower = q.lower()
-            q_words = set(q_lower.split())
-            for term in all_defs:
-                term_lower = term.lower()
-                # Count how many query words appear in the term
-                matches = sum(1 for w in q_words if w in term_lower)
-                if matches > 0:
-                    # Bonus if the term appears as a substring or vice versa
-                    if term_lower in q_lower or q_lower in term_lower:
-                        matches += 1
-                    score = 4 + matches  # ~5-7 range
-                    results.append({
-                        "type": "definition", "id": term,
-                        "title": term, "score": score,
-                    })
-        except Exception as e:
-            pass
-    
-    # ── 2. Semantic search: technique embeddings ──
-    if TECH_EMBEDDINGS is not None and TECH_INDEX is not None:
-        import urllib.request as _ur
-        import json as _json
-        
-        try:
-            # Embed the query
-            body = _json.dumps({
-                "model": "nomic-embed-text",
-                "input": [q],
-            }).encode()
-            req = _ur.Request(
-                "http://localhost:11434/api/embed", body,
-                {"Content-Type": "application/json"}
-            )
-            with _ur.urlopen(req, timeout=30) as resp:
-                emb_result = _json.loads(resp.read())
-            q_emb = emb_result["embeddings"][0]
-            
-            # Cosine similarity — we already have normalized embeddings
-            import numpy as _np
-            sims = _np.dot(TECH_EMBEDDINGS, q_emb)
-            
-            # Top 7 techniques
-            top_idx = _np.argsort(sims)[-7:][::-1]
-            for idx in top_idx:
-                item = TECH_INDEX["items"][idx]
-                score = float(sims[idx])
-                if score > 0.3:  # minimum relevance threshold
-                    results.append({
-                        "type": "technique", "id": item["id"],
-                        "score": 2.5 + score * 3,  # ~3.4-4.7 range
-                        "applies_to": item.get("applies_to", []),
-                        "snippet": item.get("summary", item.get("embed_text", ""))[:150],
-                    })
-        except Exception as e:
-            pass
-    
-    # ── 3. Semantic search: understanding embeddings ──
-    if UND_EMBEDDINGS is not None and UND_INDEX is not None:
-        import urllib.request as _ur
-        import json as _json
-        
-        try:
-            body = _json.dumps({
-                "model": "nomic-embed-text",
-                "input": [q],
-            }).encode()
-            req = _ur.Request(
-                "http://localhost:11434/api/embed", body,
-                {"Content-Type": "application/json"}
-            )
-            with _ur.urlopen(req, timeout=30) as resp:
-                emb_result = _json.loads(resp.read())
-            q_emb = emb_result["embeddings"][0]
-            
-            import numpy as _np
-            sims = _np.dot(UND_EMBEDDINGS, q_emb)
-            
-            top_idx = _np.argsort(sims)[-5:][::-1]
-            for idx in top_idx:
-                item = UND_INDEX["items"][idx]
-                score = float(sims[idx])
-                if score > 0.3:
-                    sc_data = SCS.get(item["id"], {})
-                    results.append({
-                        "type": "understanding",
-                        "id": item["id"],
-                        "title": item.get("title", ""),
-                        "score": 1.5 + score * 2.5,
-                        "snippet": sc_data.get("understanding_short_md", "")[:150],
-                    })
-        except Exception as e:
-            pass
-    
-    # ── Fallback: if no index, do brute-force text search ──
-    if not results:
-        for sc_id, sc in SCS.items():
-            haystack = (sc.get("title", "") + " " + sc.get("normative_md", "")).lower()
-            score = haystack.count(q.lower()) * 2
-            if q.lower() in sc.get("title", "").lower():
-                score += 5
-            if score > 0:
-                results.append({
-                    "type": "sc", "id": sc_id,
-                    "title": sc.get("title", ""),
-                    "level": sc.get("level", ""),
-                    "score": score,
-                })
-        
-        for tid, tech in list(TECHNIQUES.items())[:100]:
-            if q.lower() in tid.lower() or q.lower() in tech.get("content_md", "").lower()[:200]:
-                results.append({
-                    "type": "technique", "id": tid,
-                    "score": 2,
-                })
-    
-    # ── Rank & display ──
-    results.sort(key=lambda x: x["score"], reverse=True)
-    results = results[:15]
-    
-    elapsed = time.time() - _start
-    lines = [f"# Search: \"{query}\" — {len(results)} matches ({elapsed*1000:.0f}ms)\n"]
-    for r in results:
-        icon = {"sc": "🎯", "definition": "📖", "technique": "🔧", "understanding": "📝"}.get(r["type"], "•")
-        if r["type"] == "sc":
-            lines.append(f"{icon} **{r['id']}** — {r['title']} ({r.get('level', '')})")
-        elif r["type"] == "definition":
-            lines.append(f"{icon} **{r['title']}**")
-        elif r["type"] == "technique":
-            lines.append(f"{icon} **{r['id']}**")
-            if r.get("applies_to"):
-                at = r["applies_to"]
-                sc_labels = ", ".join(f"{s['sc_id']} {s['title']}" for s in at[:3])
-                if len(at) > 3:
-                    sc_labels += f" +{len(at)-3}"
-                lines.append(f"  📌 {sc_labels}")
-            if r.get("snippet"):
-                lines.append(f"  > {r['snippet']}")
-        elif r["type"] == "understanding":
-            lines.append(f"{icon} **{r['id']}** — {r['title']} (objaśnienie)")
-            if r.get("snippet"):
-                lines.append(f"  > {r['snippet']}")
-    
-    return "\n".join(lines)
 
+    started_at = time.time()
+
+    if SEARCH_DB is None:
+        return _search_fallback(q, started_at)
+
+    fts = _fts_query(q)
+    if not fts:
+        return f'Query "{query}" contains no searchable words.'
+
+    try:
+        rows = SEARCH_DB.execute(
+            "SELECT type, id, title, title_pl, level, category,"
+            "       snippet(docs, 6, '', '', '…', 14) AS snip,"
+            f"      {_BM25} AS score"
+            "  FROM docs WHERE docs MATCH ? ORDER BY score LIMIT 60",
+            (fts,),
+        ).fetchall()
+    except Exception as e:
+        log.warning(f"search: FTS5 lookup failed for {query!r}: {e}")
+        return _search_fallback(q, started_at)
+
+    buckets = {kind: [] for kind in _SEARCH_HEADINGS}
+    for row in rows:
+        bucket = buckets.get(row[0])
+        if bucket is not None and len(bucket) < _SEARCH_LIMITS[row[0]]:
+            bucket.append(row)
+
+    total = sum(len(b) for b in buckets.values())
+    elapsed_ms = (time.time() - started_at) * 1000
+    lines = [f'# Search: "{query}" — {total} matches ({elapsed_ms:.0f}ms)']
+
+    for kind, (icon, heading) in _SEARCH_HEADINGS.items():
+        if not buckets[kind]:
+            continue
+        lines += ["", f"## {heading}"]
+        for _t, doc_id, title, title_pl, level, category, snip, _score in buckets[kind]:
+            if kind == "sc":
+                label = f"{title} / {title_pl}" if title_pl else title
+                lines.append(f"{icon} **{doc_id}** — {label} ({level})")
+            elif kind == "definition":
+                lines.append(f"{icon} **{title}**")
+            else:
+                lines.append(f"{icon} **{doc_id}** ({category})")
+            snip = " ".join(snip.split()) if snip else ""
+            if snip:
+                lines.append(f"  > {snip}")
+
+    if total == 0:
+        lines += ["", "Nic nie znaleziono. Spróbuj innego słowa kluczowego."]
+
+    return "\n".join(lines)
 
 @mcp.tool()
 def status() -> str:
@@ -1363,78 +1435,56 @@ def graph_query(entity: str) -> str:
 
     node_data = GRAPH.nodes[node_id]
     ntype = node_data.get("type", "?")
-    lines = [f"# {node_data.get('title', node_id)} ({ntype})"]
+    _title = _graph_title(node_id)
+    _head = f"{_graph_short(node_id)} — {_title}" if _title else _graph_short(node_id)
+    lines = [f"# {_head} ({ntype})"]
 
     if ntype == "sc":
-        lines.append(f"**SC:** {entity}  **Level:** {node_data.get('level', '')}")
+        lines.append(f"**Poziom:** {node_data.get('level', '')}")
         pl = node_data.get("pl_title", "")
         if pl:
             lines.append(f"**PL:** {pl}")
     elif ntype == "technique":
-        lines.append(f"**Category:** {node_data.get('category', '')}  "
-                     f"**Type:** {node_data.get('tech_type', '')}")
-        lines.append(f"**ID:** {node_data.get('wid', entity)}")
+        lines.append(f"**Kategoria:** {node_data.get('category', '')}  "
+                     f"**Typ:** {node_data.get('tech_type', '')}")
     elif ntype == "category":
-        lines.append(f"**Category node** — shows which SCs belong here")
+        lines.append("**Kategoria tematyczna** — grupuje kryteria wokół jednego zagadnienia")
+    elif ntype == "pattern":
+        lines.append("**Wzorzec deweloperski** — pełna treść: get_pattern(\"%s\")" % node_id[4:])
     elif ntype == "definition":
-        lines.append(f"**Definition** — glossary term")
+        lines.append("**Hasło glosariusza**")
+
+    alt = _graph_alt_node(node_id)
+    if alt:
+        lines.append(f"ℹ️ Istnieje też węzeł o tej nazwie: `{alt}`")
 
     lines.append("")
 
-    # Group neighbors by relation
-    from_neighbors = {}
-    to_neighbors = {}
+    # Grupuj sąsiadów po relacji, zachowując wagę właściwej krawędzi
+    to_neighbors, from_neighbors = {}, {}
     for _, neighbor, data in GRAPH.out_edges(node_id, data=True):
-        rel = data.get("relation", "?")
-        if rel not in to_neighbors:
-            to_neighbors[rel] = []
-        to_neighbors[rel].append(neighbor)
-
+        to_neighbors.setdefault(data.get("relation", "?"), []).append(
+            (neighbor, data.get("weight")))
     for neighbor, _, data in GRAPH.in_edges(node_id, data=True):
-        rel = data.get("relation", "?")
-        if rel not in from_neighbors:
-            from_neighbors[rel] = []
-        from_neighbors[rel].append(neighbor)
+        from_neighbors.setdefault(data.get("relation", "?"), []).append(
+            (neighbor, data.get("weight")))
 
-    rel_labels = {
-        "applies_to": "→ dotyczy SC",
-        "has_technique": "← ma technikę",
-        "has_failure": "← ma błąd (failure)",
-        "in_category": "→ należy do kategorii",
-        "has_sc": "← zawiera SC",
-        "related_to": "↔ powiązana technika",
-        "references": "→ odnosi się do definicji",
-        "shares_techniques": "↔ dzieli techniki z",
-        "shares_definitions": "↔ dzieli definicje z",
-    }
+    def render(groups, labels, arrow, heading):
+        if not groups:
+            return
+        lines.append(f"### {heading}")
+        for rel, entries in sorted(groups.items()):
+            label = labels.get(rel, rel)
+            entries = sorted(set(entries), key=lambda e: _graph_sort_key(e[0]))
+            shown = entries[:_GRAPH_MAX_NEIGHBOURS]
+            for neighbor, weight in shown:
+                suffix = f" (wspólnych: {weight})" if weight else ""
+                lines.append(f"- {arrow} {label}: {_graph_label(neighbor)}{suffix}")
+            if len(entries) > len(shown):
+                lines.append(f"- {arrow} {label}: … i {len(entries) - len(shown)} więcej")
 
-    if to_neighbors:
-        lines.append("### Krawędzie wychodzące")
-        for rel, neighbors in sorted(to_neighbors.items()):
-            label = rel_labels.get(rel, rel)
-            for n in sorted(neighbors, key=_graph_sort_key):
-                nd = GRAPH.nodes[n]
-                title = nd.get("title", nd.get("term", n))
-                ntype_label = {"sc": "SC", "technique": "T", "category": "KAT",
-                               "definition": "DEF"}.get(nd.get("type", ""), "?")
-                weight = ""
-                for _, _, d in GRAPH.out_edges(node_id, data=True):
-                    if d.get("relation") == rel and n in [v for _, v in GRAPH.out_edges(node_id)]:
-                        if "weight" in d:
-                            weight = f" (w={d['weight']})"
-                        break
-                lines.append(f"- {label}: **{ntype_label} {_graph_short(n)}** {title}{weight}")
-
-    if from_neighbors:
-        lines.append("### Krawędzie przychodzące")
-        for rel, neighbors in sorted(from_neighbors.items()):
-            label = rel_labels.get(rel, rel)
-            for n in sorted(neighbors, key=_graph_sort_key):
-                nd = GRAPH.nodes[n]
-                title = nd.get("title", nd.get("term", n))
-                ntype_label = {"sc": "SC", "technique": "T", "category": "KAT",
-                               "definition": "DEF", "pattern": "PAT"}.get(nd.get("type", ""), "?")
-                lines.append(f"- {label}: **{ntype_label} {_graph_short(n)}** {title}")
+    render(to_neighbors, _REL_OUT, "→", "Krawędzie wychodzące")
+    render(from_neighbors, _REL_IN, "←", "Krawędzie przychodzące")
 
     return "\n".join(lines)
 
@@ -1460,43 +1510,40 @@ def graph_between(entity_a: str, entity_b: str) -> str:
     if a == b:
         return f"Both resolve to the same node: {a}"
 
-    na = GRAPH.nodes.get(a)
-    nb = GRAPH.nodes.get(b)
-    title_a = na.get("title", na.get("term", entity_a)) if na else entity_a
-    title_b = nb.get("title", nb.get("term", entity_b)) if nb else entity_b
+    lines = [f"# Połączenia: {_graph_label(a)} ↔ {_graph_label(b)}"]
 
-    lines = [f"# Połączenia: {_graph_short(a)} ({title_a}) ↔ {_graph_short(b)} ({title_b})"]
-
-    # Shared neighbors
-    preds_a = set(GRAPH.predecessors(a)) | set(GRAPH.successors(a))
-    preds_b = set(GRAPH.predecessors(b)) | set(GRAPH.successors(b))
-    shared = preds_a & preds_b
+    # Wspólni sąsiedzi
+    neighbours_a = set(GRAPH.predecessors(a)) | set(GRAPH.successors(a))
+    neighbours_b = set(GRAPH.predecessors(b)) | set(GRAPH.successors(b))
+    shared = sorted(neighbours_a & neighbours_b, key=_graph_sort_key)
 
     if shared:
         lines.append(f"\n### Wspólni sąsiedzi ({len(shared)})")
-        for n in sorted(shared, key=_graph_sort_key):
-            nd = GRAPH.nodes[n]
-            title = nd.get("title", nd.get("term", n))
-            lines.append(f"- **{_graph_short(n)}** {title}")
+        by_kind = {}
+        for n in shared:
+            by_kind.setdefault(GRAPH.nodes[n].get("type", "?"), []).append(n)
+        for kind in ("technique", "definition", "category", "pattern", "sc"):
+            group = by_kind.get(kind)
+            if not group:
+                continue
+            lines.append(f"\n**{_GRAPH_KIND_NAME.get(kind, kind)}** ({len(group)})")
+            for n in group[:_GRAPH_MAX_NEIGHBOURS]:
+                lines.append(f"- {_graph_label(n)}")
+            if len(group) > _GRAPH_MAX_NEIGHBOURS:
+                lines.append(f"- … i {len(group) - _GRAPH_MAX_NEIGHBOURS} więcej")
     else:
         lines.append("\nBrak bezpośrednich wspólnych sąsiadów.")
 
-    # Shortest path
+    # Najkrótsza ścieżka
     try:
         path = nx.shortest_path(GRAPH, a, b)
-        lines.append(f"\n### Najkrótsza ścieżka ({len(path)-1} przeskoków)")
-        for i in range(len(path) - 1):
-            nd = GRAPH.nodes[path[i]]
-            title = nd.get("title", nd.get("term", path[i]))
-            lines.append(f"  **{_graph_short(path[i])}** {title}")
-            # edge label
-            edge_data = GRAPH.get_edge_data(path[i], path[i + 1])
-            if edge_data:
-                rel = list(edge_data.values())[0].get("relation", "→")
-                lines.append(f"  ↓ {rel}")
-        nd = GRAPH.nodes[path[-1]]
-        title = nd.get("title", nd.get("term", path[-1]))
-        lines.append(f"  **{_graph_short(path[-1])}** {title}")
+        lines.append(f"\n### Najkrótsza ścieżka ({len(path) - 1} przeskoków)")
+        for i, node in enumerate(path):
+            lines.append(f"  {_graph_label(node)}")
+            if i < len(path) - 1:
+                edge_data = GRAPH.get_edge_data(node, path[i + 1]) or {}
+                rel = next(iter(edge_data.values()), {}).get("relation", "→")
+                lines.append(f"  ↓ {_REL_OUT.get(rel, rel)}")
     except nx.NetworkXNoPath:
         lines.append("\n❌ Brak ścieżki między tymi węzłami.")
 
@@ -1546,44 +1593,111 @@ def graph_categories() -> str:
 
 
 def _resolve_graph_node(entity: str) -> str | None:
-    """Resolve a user-provided string to a graph node ID (prefixed form)."""
-    e = entity.strip()
+    """
+    Resolve a user-provided string to a graph node ID (prefixed form).
 
-    # Direct match (already prefixed)
+    Kolejność: węzeł podany wprost → kryterium → technika → wzorzec → kategoria.
+    Wzorce mają pierwszeństwo przed kategoriami o tej samej nazwie (np. "combobox"),
+    bo niosą treść deweloperską; _graph_alt_node() podpowiada tę drugą.
+    """
+    e = entity.strip()
+    if not e:
+        return None
+
+    # 1. węzeł podany wprost, z prefiksem
     if e in GRAPH:
         return e
 
-    # Category name
-    cat_key = "CAT:" + e
-    if cat_key in GRAPH:
-        return cat_key
-
-    # Technique ID (uppercase G18, H37, etc.)
-    tech_key = "T:" + e.upper()
-    if tech_key in GRAPH:
-        return tech_key
-
-    # SC by ID
-    sc_key = "SC:" + e
-    if sc_key in GRAPH:
-        return sc_key
-
-    # SC by slug (e.g., "non-text-content")
-    sc_id = SLUG_TO_SC_ID.get(e)
-    if sc_id:
+    # 2. kryterium sukcesu — ID, slug, tytuł angielski lub polski
+    sc_id = _resolve(e)
+    if sc_id and "SC:" + sc_id in GRAPH:
         return "SC:" + sc_id
 
-    # Partial match by slug
-    for slug, sc_id in SLUG_TO_SC_ID.items():
-        if e.lower() in slug:
-            return "SC:" + sc_id
+    # 3. technika — bez względu na wielkość liter i separatory
+    tid = TECH_BY_NORM.get(_norm_key(e))
+    if tid and "T:" + tid in GRAPH:
+        return "T:" + tid
 
-    # Try as technique without prefix (case-insensitive)
-    for tid in TECHNIQUES:
-        if e.upper() == tid:
-            return "T:" + tid
+    # 4. wzorzec deweloperski (klucze są zapisane małymi literami)
+    pat_key = "PAT:" + e.lower()
+    if pat_key in GRAPH:
+        return pat_key
+
+    # 5. kategoria tematyczna, bez względu na wielkość liter
+    cat_norm = _norm_key(e)
+    for cat_name in CATEGORIES:
+        if _norm_key(cat_name) == cat_norm:
+            return "CAT:" + cat_name
 
     return None
+
+
+def _graph_alt_node(node_id: str) -> str | None:
+    """Węzeł o tej samej nazwie w drugiej rodzinie (wzorzec ↔ kategoria)."""
+    if node_id.startswith("PAT:"):
+        name = node_id[4:]
+        for cat_name in CATEGORIES:
+            if _norm_key(cat_name) == _norm_key(name):
+                return "CAT:" + cat_name
+    elif node_id.startswith("CAT:"):
+        pat_key = "PAT:" + node_id[4:].lower()
+        if pat_key in GRAPH:
+            return pat_key
+    return None
+
+
+# Ile sąsiadów jednej relacji wypisać, zanim skrócimy listę
+_GRAPH_MAX_NEIGHBOURS = 12
+
+_GRAPH_KIND_LABEL = {"sc": "SC", "technique": "T", "category": "KAT",
+                     "definition": "DEF", "pattern": "WZ"}
+
+_GRAPH_KIND_NAME = {"sc": "Kryteria sukcesu", "technique": "Techniki",
+                    "category": "Kategorie", "definition": "Definicje",
+                    "pattern": "Wzorce"}
+
+# Etykiety zależą od kierunku krawędzi — wcześniej jedna mapa opisywała oba,
+# przez co krawędzie wychodzące dostawały opis przychodzących.
+_REL_OUT = {
+    "applies_to": "dotyczy kryterium",
+    "has_technique": "ma technikę",
+    "has_failure": "ma błąd (failure)",
+    "in_category": "należy do kategorii",
+    "in_pattern": "występuje we wzorcu",
+    "has_sc": "zawiera kryterium",
+    "related_to": "powiązana technika",
+    "references": "odwołuje się do definicji",
+    "shares_techniques": "dzieli techniki z",
+    "shares_definitions": "dzieli definicje z",
+}
+
+_REL_IN = {
+    "applies_to": "jest wskazywane przez technikę",
+    "has_technique": "jest techniką dla",
+    "has_failure": "jest błędem dla",
+    "in_category": "kategoria obejmuje",
+    "in_pattern": "wzorzec obejmuje",
+    "has_sc": "należy do",
+    "related_to": "jest wskazywana przez",
+    "references": "jest przywoływana przez",
+    "shares_techniques": "dzieli techniki z",
+    "shares_definitions": "dzieli definicje z",
+}
+
+
+def _graph_title(nid: str) -> str:
+    """Nazwa węzła do wyświetlenia; pusta, gdy powtarzałaby identyfikator."""
+    nd = GRAPH.nodes.get(nid, {})
+    title = nd.get("title") or nd.get("term") or ""
+    return "" if _norm_key(title) == _norm_key(_graph_short(nid)) else title
+
+
+def _graph_label(nid: str) -> str:
+    """'SC 1.4.3 Contrast (Minimum)' — identyfikator z nazwą, jeśli wnosi coś nowego."""
+    kind = _GRAPH_KIND_LABEL.get(GRAPH.nodes.get(nid, {}).get("type", ""), "?")
+    title = _graph_title(nid)
+    label = f"**{kind} {_graph_short(nid)}**"
+    return f"{label} {title}" if title else label
 
 
 def _graph_short(nid: str) -> str:
@@ -1609,6 +1723,31 @@ def _graph_sort_key(nid: str) -> tuple:
     return (1, 0, 0, nid)
 
 
+def _subsystem_status_lines():
+    """
+    Stan podsystemów opcjonalnych — pozwala po wdrożeniu jednym spojrzeniem sprawdzić,
+    czy obraz zawiera networkx i indeks embeddings/search.db.
+    """
+    def mark(active):
+        return "✅" if active else "❌"
+
+    graph_desc = (f"{GRAPH.number_of_nodes()} węzłów, {GRAPH.number_of_edges()} krawędzi"
+                  if GRAPH is not None else "WYŁĄCZONY — brak networkx")
+
+    if SEARCH_DB is None:
+        fts_desc = "WYŁĄCZONY — brak embeddings/search.db, search() działa awaryjnie"
+    else:
+        counts = dict(SEARCH_DB.execute("SELECT type, count(*) FROM docs GROUP BY type"))
+        fts_desc = (f"{sum(counts.values())} dokumentów "
+                    f"({counts.get('sc', 0)} SC, {counts.get('definition', 0)} definicji, "
+                    f"{counts.get('technique', 0)} technik)")
+
+    return [
+        f"{mark(GRAPH is not None)} Graf wiedzy:  {graph_desc}",
+        f"{mark(SEARCH_DB is not None)} Indeks FTS5:  {fts_desc}",
+    ]
+
+
 def main():
     parser = argparse.ArgumentParser(description="WCAG 2.2 MCP Server")
     parser.add_argument("--transport", choices=["stdio", "sse", "streamable-http"], default="stdio",
@@ -1624,27 +1763,30 @@ def main():
     # Resolve API key: arg > env var > no auth
     api_key = args.api_key or os.environ.get("WCAG22_API_KEY", "")
 
-    log.info("=" * 72)
-    log.info(f"  🚀 SERVER START  |  {_fmt_ts()}")
-    log.info(f"  Dane: {COUNTS['scs']} SC, {COUNTS['techniques']} technik, "
-             f"{COUNTS['definitions']} definicji, {COUNTS['understanding']} dokumentów")
-    log.info(f"  Transport: {args.transport}  |  Log: {LOG_FILE}")
-    if api_key:
-        log.info(f"  🔒 API key: włączony (clients must send X-API-Key header)")
-    else:
-        log.info(f"  🔓 API key: wyłączony (brak zabezpieczenia)")
-    log.info("=" * 72)
+    def banner(line):
+        """
+        Baner startowy. W Cloud Run log.info trafia na stderr, więc dodatkowy
+        print tylko by go zdublował; lokalnie stderr przyjmuje dopiero ostrzeżenia,
+        więc print jest jedynym sposobem, żeby użytkownik to zobaczył.
+        """
+        log.info(line)
+        if not IN_CLOUD_RUN:
+            print(line, file=sys.stderr)
 
-    print(f"WCAG 2.2 MCP Server starting...", file=__import__('sys').stderr)
-    print(f"  Data: {COUNTS['scs']} SCs, {COUNTS['techniques']} techniques, "
-          f"{COUNTS['definitions']} definitions, {COUNTS['understanding']} docs",
-          file=__import__('sys').stderr)
-    print(f"  Transport: {args.transport}", file=__import__('sys').stderr)
-    print(f"  Log: {LOG_FILE}", file=__import__('sys').stderr)
+    log_target = "stderr (Cloud Run)" if IN_CLOUD_RUN else (LOG_FILE or "stderr")
+
+    banner("=" * 72)
+    banner(f"  🚀 SERVER START  |  {_fmt_ts()}")
+    banner(f"  Dane: {COUNTS['scs']} SC, {COUNTS['techniques']} technik, "
+           f"{COUNTS['definitions']} definicji, {COUNTS['understanding']} dokumentów")
+    banner(f"  Transport: {args.transport}  |  Log: {log_target}")
+    for _line in _subsystem_status_lines():
+        banner(f"  {_line}")
     if api_key:
-        print(f"  🔒 API key authentication enabled", file=__import__('sys').stderr)
+        banner("  🔒 API key: włączony (klient musi wysłać nagłówek X-API-Key)")
     else:
-        print(f"  🔓 No API key — server is open", file=__import__('sys').stderr)
+        banner("  🔓 API key: wyłączony — serwer jest otwarty")
+    banner("=" * 72)
 
     if args.transport == "sse":
         import uvicorn
@@ -1672,8 +1814,7 @@ def main():
                 return response
         
         app = NoBufferMiddleware(sse_app)
-        log.info(f"  Nasłuch: http://{args.host}:{args.port}/sse")
-        print(f"  Listening on http://{args.host}:{args.port}/sse", file=__import__('sys').stderr)
+        banner(f"  Nasłuch: http://{args.host}:{args.port}/sse")
         uvicorn.run(app, host=args.host, port=args.port, log_level="info")
     
     elif args.transport == "streamable-http":
@@ -1681,14 +1822,13 @@ def main():
         raw_app = mcp.streamable_http_app()
         # Kolejność: API key (zewnętrzna) → logowanie → aplikacja MCP
         app = APIKeyMiddleware(MCPLogMiddleware(raw_app), api_key)
-        log.info(f"  Nasłuch: http://{args.host}:{args.port}/mcp")
-        print(f"  Listening on http://{args.host}:{args.port}/mcp", file=__import__('sys').stderr)
+        banner(f"  Nasłuch: http://{args.host}:{args.port}/mcp")
         uvicorn.run(app, host=args.host, port=args.port, log_level="info")
     
     else:
         # stdio — logowanie ograniczone (brak łatwego hooka w MCP stdio)
         log.warning("  Tryb stdio — logowanie żądań tylko na poziomie serwera")
-        print("  Uruchomiono w trybie stdio. Log: " + str(LOG_FILE), file=__import__('sys').stderr)
+        banner(f"  Tryb stdio. Log: {log_target}")
         mcp.run(transport="stdio")
 
 
