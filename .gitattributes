@@ -1,0 +1,14 @@
+# Końce linii: LF w repozytorium ORAZ w katalogu roboczym.
+#
+# Bez tego pliku Windows z core.autocrlf=true trzyma na dysku CRLF, a w repo
+# ląduje LF. Skutek: obraz Dockera zbudowany lokalnie różni się bajtowo od
+# obrazu zbudowanego z klona repozytorium, mimo identycznej treści.
+# "eol=lf" ma pierwszeństwo przed core.autocrlf, więc wymusza LF u każdego.
+* text=auto eol=lf
+
+# Pliki binarne — git nie może ich tknąć normalizacją.
+*.db  binary
+*.npy binary
+
+# Skrypty powłoki wykonywane w kontenerze i w Cloud Build: CRLF je psuje.
+*.sh text eol=lf
