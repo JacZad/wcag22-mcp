@@ -9,7 +9,7 @@
 #   3. ./deploy-cloudrun.sh
 #
 # Albo jednym poleceniem (buduje obraz w chmurze):
-#   gcloud run deploy wcag22-mcp --source . --region europe-central2 \
+#   gcloud run deploy wcag22-mcp --source . --region europe-west1 \
 #     --allow-unauthenticated --memory=512Mi --timeout=600 \
 #     --min-instances=0 --max-instances=3 --concurrency=80
 #
@@ -18,7 +18,7 @@
 set -e
 
 PROJECT_ID="${1:-$(gcloud config get project)}"
-REGION="${2:-europe-central2}"
+REGION="${2:-europe-west1}"
 SERVICE_NAME="${3:-wcag22-mcp}"
 
 echo "=== Wdrażanie WCAG MCP na Cloud Run ==="

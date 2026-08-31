@@ -1,3 +1,19 @@
+# Pipeline wdrożeniowy WCAG 2.2 MCP Server.
+#
+# Ścieżka obrazu i region odpowiadają temu, co realnie istnieje w projekcie:
+#   - repozytorium Artifact Registry: wcag22-mcp (europe-central2)
+#   - obraz:                          wcag22-server
+#   - usługa produkcyjna:             europe-west1 — tam wskazuje mapowanie
+#                                     domeny mcp.dostepnik.com.pl
+#
+# Rejestr zostaje w europe-central2, bo obie usługi już z niego ciągną;
+# lokalizacja rejestru nie musi zgadzać się z regionem Cloud Run.
+
+# Uwaga: podstawienia Cloud Build nie rozwijają się rekurencyjnie, więc
+# $PROJECT_ID nie może siedzieć w zmiennej _IMAGE — ścieżka jest wpisana wprost.
+substitutions:
+  _REGION: europe-west1
+
 steps:
   # Krok 1: Zbuduj obraz
   #
@@ -7,51 +23,39 @@ steps:
   # nie mógł się powieść i wywracał cały pipeline.
   - name: 'gcr.io/cloud-builders/docker'
     id: build
-    args:
-      - 'build'
-      - '-t'
-      - 'europe-central2-docker.pkg.dev/$PROJECT_ID/wcag22/wcag22-mcp:latest'
-      - '-t'
-      - 'europe-central2-docker.pkg.dev/$PROJECT_ID/wcag22/wcag22-mcp:$BUILD_ID'
-      - '.'
+    args: ['build', '-t', 'europe-central2-docker.pkg.dev/$PROJECT_ID/wcag22-mcp/wcag22-server:$BUILD_ID', '-t', 'europe-central2-docker.pkg.dev/$PROJECT_ID/wcag22-mcp/wcag22-server:latest', '.']
 
   # Krok 2: Sprawdź, czy obraz naprawdę działa
   #
-  # Uruchamiamy smoke test wewnątrz zbudowanego obrazu, więc weryfikujemy
-  # dokładnie to, co pojedzie na produkcję: obecność networkx, indeksu FTS5
+  # Smoke test biegnie wewnątrz zbudowanego obrazu, więc weryfikujemy dokładnie
+  # ten artefakt, który pojedzie na produkcję: obecność networkx, indeksu FTS5
   # i poprawne odpowiedzi wszystkich narzędzi. Brakująca zależność albo
   # nieskopiowany plik zatrzymują pipeline tutaj, a nie po wdrożeniu.
   - name: 'gcr.io/cloud-builders/docker'
     id: smoke-test
-    args:
-      - 'run'
-      - '--rm'
-      - '--entrypoint'
-      - 'python3'
-      - 'europe-central2-docker.pkg.dev/$PROJECT_ID/wcag22/wcag22-mcp:$BUILD_ID'
-      - 'smoke_test.py'
+    args: ['run', '--rm', '--entrypoint', 'python3', 'europe-central2-docker.pkg.dev/$PROJECT_ID/wcag22-mcp/wcag22-server:$BUILD_ID', 'smoke_test.py']
 
   # Krok 3: Push do Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
     id: push
-    args:
-      - 'push'
-      - '--all-tags'
-      - 'europe-central2-docker.pkg.dev/$PROJECT_ID/wcag22/wcag22-mcp'
+    args: ['push', '--all-tags', 'europe-central2-docker.pkg.dev/$PROJECT_ID/wcag22-mcp/wcag22-server']
 
   # Krok 4: Deploy na Cloud Run
   #
   # Serwer działa bezstanowo (stateless_http), więc session affinity nie jest
   # potrzebne, a współbieżność może być wysoka — dane są w pamięci, tylko do
   # odczytu, bez I/O na żądanie.
+  #
+  # Świadomie NIE ustawiamy tu zmiennych środowiskowych: WCAG22_API_KEY jest
+  # skonfigurowany na usłudze i wdrożenie samego obrazu go nie rusza.
   - name: 'gcr.io/cloud-builders/gcloud'
     id: deploy
     args:
       - 'run'
       - 'deploy'
       - 'wcag22-mcp'
-      - '--image=europe-central2-docker.pkg.dev/$PROJECT_ID/wcag22/wcag22-mcp:$BUILD_ID'
-      - '--region=europe-central2'
+      - '--image=europe-central2-docker.pkg.dev/$PROJECT_ID/wcag22-mcp/wcag22-server:$BUILD_ID'
+      - '--region=${_REGION}'
       - '--platform=managed'
       - '--allow-unauthenticated'
       - '--memory=512Mi'
@@ -62,19 +66,11 @@ steps:
       - '--max-instances=3'
       - '--concurrency=80'
       - '--port=8080'
-      # Wymaga jednorazowego utworzenia sekretu:
-      #   printf '%s' "TWÓJ-KLUCZ" | gcloud secrets create wcag22-api-key --data-file=-
-      #   gcloud secrets add-iam-policy-binding wcag22-api-key \
-      #     --member=serviceAccount:$PROJECT_NUMBER-compute@developer.gserviceaccount.com \
-      #     --role=roles/secretmanager.secretAccessor
-      # Bez sekretu ten krok się nie powiedzie — usuń wtedy poniższą linię,
-      # ale pamiętaj, że serwer bez klucza jest otwarty dla wszystkich.
-      - '--set-secrets=WCAG22_API_KEY=wcag22-api-key:latest'
 
 images:
-  - 'europe-central2-docker.pkg.dev/$PROJECT_ID/wcag22/wcag22-mcp'
+  - 'europe-central2-docker.pkg.dev/$PROJECT_ID/wcag22-mcp/wcag22-server'
 
 options:
   logging: CLOUD_LOGGING_ONLY
 
-timeout: '900s'
+timeout: '1200s'
