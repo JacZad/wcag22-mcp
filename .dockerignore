@@ -11,3 +11,31 @@ Dockerfile
 cloudbuild.yaml
 README.md
 wcag-html/*.html
+
+# Źródła W3C dla build_data.py — 50 MB, potrzebne tylko przy przebudowie
+# danych, nigdy w obrazie (dane są commitowane gotowe).
+wcag-repo/
+
+# Embeddingi po przejściu na FTS5 — obraz kopiuje wyłącznie search.db.
+embeddings/*.npy
+embeddings/*.json
+
+# Skrypty budowania i badawcze — nie trafiają do runtime.
+build_data.py
+build_search_index.py
+build_summaries.py
+build_test_queries.py
+rebuild_*.py
+summarize_gemma.py
+scrape_w3c_mapping.py
+remove_flash_sl.py
+clean_md.py
+test_gemma_embed.py
+test_hybrid.py
+test_retrieval.py
+sc_map.py
+categories-en.json
+patterns.json
+deploy-cloudrun.sh
+uv.lock
+pyproject.toml
