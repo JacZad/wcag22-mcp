@@ -27,6 +27,9 @@ import unicodedata
 from datetime import datetime
 from pathlib import Path
 
+# Wersja serwera — trzymaj w zgodzie z pyproject.toml i CHANGELOG.md.
+__version__ = "0.2.0"
+
 try:
     from mcp.server.fastmcp import FastMCP
     from mcp.server.transport_security import TransportSecuritySettings
@@ -1365,7 +1368,7 @@ def status() -> str:
     Get server status and statistics about the loaded WCAG 2.2 data.
     """
     return (
-        f"## WCAG 2.2 MCP Server — Status\n\n"
+        f"## WCAG 2.2 MCP Server {__version__} — Status\n\n"
         f"**Success Criteria:** {COUNTS['scs']}\n"
         f"**Terms/Definitions:** {COUNTS['definitions']}\n"
         f"**Techniques:** {COUNTS['techniques']}\n"
@@ -1751,7 +1754,7 @@ def main():
     log_target = "stderr (Cloud Run)" if IN_CLOUD_RUN else (LOG_FILE or "stderr")
 
     banner("=" * 72)
-    banner(f"  🚀 SERVER START  |  {_fmt_ts()}")
+    banner(f"  🚀 SERVER START  |  v{__version__}  |  {_fmt_ts()}")
     banner(f"  Dane: {COUNTS['scs']} SC, {COUNTS['techniques']} technik, "
            f"{COUNTS['definitions']} definicji, {COUNTS['understanding']} dokumentów")
     banner(f"  Transport: {args.transport}  |  Log: {log_target}")

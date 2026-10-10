@@ -4,6 +4,8 @@ Serwer MCP (Model Context Protocol) z pełną bazą wiedzy WCAG 2.2 — kryteria
 
 Umożliwia asystentom AI (Hermes, Claude Code, Cursor, Copilot i inne) udzielanie precyzyjnych odpowiedzi na pytania o dostępność cyfrową bez halucynacji — dane pochodzą bezpośrednio ze specyfikacji W3C.
 
+**Wersja:** 0.2.0 — zmiany opisuje [CHANGELOG.md](CHANGELOG.md). Wersja 0.2.0 zmieniła nazwy części narzędzi; tabela przejścia jest w changelogu.
+
 ---
 
 ## Spis treści
@@ -33,9 +35,9 @@ Umożliwia asystentom AI (Hermes, Claude Code, Cursor, Copilot i inne) udzielani
 | Funkcja | Opis |
 |---|---|
 | **87 kryteriów sukcesu** | Wszystkie SC WCAG 2.2 (A, AA, AAA) z pełnym tekstem normatywnym |
-| **520+ technik** | Techniki wystarczające, zalecane i błędów (G, H, F, ARIA, CSS, SCR, SVR, PDF…) |
+| **450+ technik** | Techniki wystarczające, zalecane i błędów (G, H, F, ARIA, C, SCR, SVR, PDF, SM, T); bez przestarzałych technik Flash i Silverlight |
 | **101 definicji** | Słownik terminów WCAG z objaśnieniami i przykładami |
-| **Objaśnienia (Understanding)** | Pełne dokumenty Understanding dla każdego SC |
+| **Objaśnienia (Understanding)** | Dla każdego SC streszczenie (1–4 KB: cel, rozróżnienia, wyjątki, typowe błędy) oraz pełny dokument W3C na żądanie |
 | **Polskie tytuły** | SC wyświetlane z oficjalnym tłumaczeniem PL |
 | **Wzorce ARIA APG** | Combobox, Dialog, Tooltip, Tree, Treegrid, Carousel i więcej — z kodem HTML, klawiaturą, zarządzaniem fokusem |
 | **Graf wiedzy** | Połączenia między SC, technikami, definicjami i kategoriami — szukaj powiązań i najkrótszych ścieżek |
@@ -48,13 +50,14 @@ Umożliwia asystentom AI (Hermes, Claude Code, Cursor, Copilot i inne) udzielani
 
 ## Wymagania
 
-- **Python 3.10+**
-- **pip: `mcp`** (pakiet SDK) — `pip install mcp`
+- **Python 3.12+**
+- **`mcp`** (SDK, wersja 1.x — 2.x zmienia API) i `uvicorn`
 - Opcjonalnie: `networkx` — narzędzia grafu (`graph_query`, `graph_between`)
-- Wyszukiwanie nie wymaga żadnej usługi zewnętrznej — indeks FTS5 jest wbudowany w `embeddings/search.db`
+- Serwer nie korzysta z żadnego modelu językowego ani usługi zewnętrznej — wyszukiwanie to wbudowany indeks FTS5 w `embeddings/search.db`
 
 ```bash
-pip install mcp networkx
+pip install -r requirements.txt
+# albo: uv sync
 ```
 
 ---
@@ -63,13 +66,13 @@ pip install mcp networkx
 
 ```bash
 # 1. Sklonuj repozytorium
-git clone <repo-url>
-cd hermes-mcp-wcag22
+git clone https://github.com/JacZad/wcag22-mcp.git
+cd wcag22-mcp
 
 # 2. (Opcjonalnie) Utwórz venv
 python3 -m venv .venv
 source .venv/bin/activate
-pip install mcp networkx
+pip install -r requirements.txt
 
 # 3. Uruchom w trybie stdio (dla lokalnych klientów MCP)
 python3 server.py
@@ -175,7 +178,9 @@ Serwer udostępnia następujące narzędzia MCP:
 | `get_pattern(name)` | Wzorzec ARIA APG (np. `"combobox"`, `"dialog"`); bez nazwy — lista wzorców |
 | `graph_query(entity)` | Zapytanie do grafu wiedzy; bez argumentu — kategorie tematyczne |
 | `graph_between(a, b)` | Połączenia między dwoma encjami w grafie |
-| `status()` | Status serwera i statystyki danych |
+| `status()` | Wersja serwera, statystyki danych i stan podsystemów |
+
+Narzędzia zwracają Markdown. Rozmiary odpowiedzi są dobrane z myślą o kosztach tokenów po stronie klienta: większość mieści się w kilkuset tokenach, a najdłuższe treści (pełny dokument Understanding, pełna treść techniki) są dostępne tylko przez narzędzia wywoływane wprost.
 
 ---
 
@@ -428,13 +433,33 @@ curl -X POST http://127.0.0.1:9100/mcp \
 ├── smoke_test.py        # Test dymny wszystkich narzędzi (uruchamiany w Cloud Build)
 ├── embeddings/
 │   └── search.db        # Baza SQLite FTS5 — jedyny plik używany w czasie działania
-├── patterns/            # Definicje wzorców ARIA APG (YAML/JSON)
+├── patterns.json        # Definicje wzorców ARIA APG
+├── categories-en.json   # Kategorie tematyczne SC (dla grafu wiedzy)
+├── CHANGELOG.md
 └── README.md
 ```
 
+### Przebudowa danych
+
+Dane są commitowane gotowe, więc przebudowa jest potrzebna tylko po zmianie źródeł. Wymaga [pandoc](https://pandoc.org/) i źródeł W3C w katalogu `wcag-repo/` (klon [w3c/wcag](https://github.com/w3c/wcag), ignorowany przez git).
+
+```bash
+python3 build_data.py           # wcag-data.json ze źródeł W3C + streszczenia Understanding
+python3 build_search_index.py   # embeddings/search.db
+python3 smoke_test.py           # test dymny wszystkich narzędzi
+```
+
+Po zmianie samych streszczeń w `understanding_summaries.md` wystarczy:
+
+```bash
+python3 apply_summaries.py && python3 build_search_index.py
+```
+
+Działające instancje serwera wczytują dane przy starcie — po przebudowie zrestartuj je.
+
 ### Dodawanie nowych wzorców ARIA
 
-Dodaj wpis do `patterns/` w formacie:
+Dodaj wpis do `patterns.json` w formacie:
 
 ```json
 {
