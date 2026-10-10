@@ -79,11 +79,10 @@ def build():
     summaries = load_tech_summaries()
 
     db_path = INDEX_DIR / "search.db"
-    if db_path.exists():
-        db_path.unlink()
-        print("  Removed old search.db")
 
-    conn = sqlite3.connect(str(db_path))
+    # Budujemy w pamięci i kopiujemy przez backup API zamiast kasować plik:
+    # na Windows działający serwer trzyma search.db otwarty i unlink() się wywraca.
+    conn = sqlite3.connect(":memory:")
     conn.execute(
         "CREATE VIRTUAL TABLE docs USING fts5("
         "  id,"
@@ -154,6 +153,9 @@ def build():
     conn.commit()
     conn.isolation_level = None  # VACUUM cannot run inside a transaction
     conn.execute("VACUUM")
+    dest = sqlite3.connect(str(db_path))
+    conn.backup(dest)
+    dest.close()
     conn.close()
 
     size_kb = db_path.stat().st_size / 1024

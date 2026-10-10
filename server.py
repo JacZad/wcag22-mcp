@@ -292,12 +292,12 @@ class MCPLogMiddleware:
                     if key not in sent_headers:
                         h.append((key, val))
                 msg["headers"] = h
-            
+
             elif msg["type"] == "http.response.body":
                 chunk = msg.get("body", b"")
                 response_bytes += len(chunk)
                 # Do logu wystarczy początek — nie kopiujemy całej odpowiedzi,
-                # która przy get_understanding(full=True) ma kilkadziesiąt KB.
+                # która przy get_full_understanding ma kilkadziesiąt KB.
                 if response_bytes <= _LOG_BODY_LIMIT:
                     response_chunks.append(chunk)
 
@@ -677,7 +677,7 @@ def _resolve(identifier):
     # Dopasowanie częściowe: zapytanie musi być początkiem któregoś słowa tytułu
     # lub slugu. Wygrywa najkrótszy alias, przy remisie najniższe ID — żeby wynik
     # był powtarzalny, a nie zależny od kolejności w słowniku.
-    # Krótkie klucze pomijamy: "1" to zasada, a nie kryterium (patrz get_hierarchy).
+    # Krótkie klucze pomijamy: "1" to zasada, a nie kryterium (patrz get).
     if len(key) < 3:
         return None
     candidates = [(alias_len, sc_id) for word, alias_len, sc_id in SC_ALIAS_WORDS
@@ -718,17 +718,24 @@ mcp = FastMCP(
 
 
 @mcp.tool()
-def get_sc(identifier: str) -> str:
+def get(identifier: str) -> str:
     """
-    Get a WCAG 2.2 success criterion by ID or slug.
-    
-    Examples: "1.1.1", "non-text-content", "2.4.7"
-    Returns: title, level, normative text, and exceptions as Markdown.
+    Get a WCAG 2.2 principle, guideline or success criterion.
+
+    "1"-"4" returns a principle, "2.4" a guideline (both with their SCs).
+    An SC can be given by ID, slug or English/Polish title.
+    Examples: "1", "2.4", "1.4.3", "non-text-content", "kontrast"
     """
-    sc_id = _resolve(identifier)
+    raw = str(identifier).strip()
+    if raw in PRINCIPLES:
+        return _principle(raw)
+    if raw in GUIDELINES:
+        return _guideline(raw)
+
+    sc_id = _resolve(raw)
     if not sc_id:
-        return f"SC '{identifier}' not found. Try list_scs() to see all."
-    
+        return f"'{identifier}' not found. Try list_scs() to see all."
+
     sc = SCS[sc_id]
     pl_title = SC_PL.get(sc_id, '')
     title_line = f"# {sc['id']} — {sc['title']}"
@@ -751,7 +758,7 @@ def get_sc(identifier: str) -> str:
     lines.append(f'🔧 Techniki: get_techniques("{sc["id"]}")')
     lines.append("")
     lines.append(f"📖 [View on W3C]({sc.get('w3c_url', '#')})")
-    
+
     return "\n".join(lines)
 
 
@@ -759,7 +766,7 @@ def get_sc(identifier: str) -> str:
 def get_definition(term: str) -> str:
     """
     Get the definition of a WCAG term.
-    
+
     Examples: "assistive technology", "keyboard interface", "text alternative"
     Returns the definition as Markdown from the WCAG 2.2 glossary.
     """
@@ -788,48 +795,50 @@ def get_definition(term: str) -> str:
         near = sorted({t for t in DEFINITIONS for w in words if w in t.lower()})[:6]
         hint = f" Podobne hasła: {', '.join(near)}." if near else ""
         return f"Term '{term}' not found.{hint}"
-    
+
     lines = [f"## {defn['term']}", "", defn['definition_md']]
     if defn.get('details'):
         lines.append("")
         lines.append("**Examples:**")
         for d in defn['details']:
             lines.append(f"- {d}")
-    
+
     return "\n".join(lines)
 
 
 @mcp.tool()
-def get_techniques(identifier: str) -> str:
+def get_techniques(identifier: str, failures_only: bool = False) -> str:
     """
-    Get techniques for a WCAG 2.2 success criterion.
-    
-    Examples: "1.1.1", "bypass-blocks", "2.4.7"
-    Returns technique IDs with category, type, and snippet.
+    Get techniques and common failures for a WCAG 2.2 success criterion.
+
+    Pass failures_only=True to list only the failures, each with a snippet.
+    Examples: get_techniques("1.1.1"), get_techniques("2.4.7", failures_only=True)
     Use get_technique(id) for full content of a specific technique.
     """
+    if failures_only:
+        return _failures(identifier)
     sc_id = _resolve(identifier) or identifier
     sc = SCS.get(sc_id, {})
-    
+
     title = f"{sc.get('id', '')} — {sc.get('title', identifier)}" if sc else identifier
     pl_title = SC_PL.get(sc_id, '')
     header = f"# Techniques for {title}"
     if pl_title:
         header += f"  |  {pl_title}"
     header += "\n"
-    
+
     tech_ids = INDEXES.get("tech_by_sc", {}).get(sc_id, [])
     failure_ids = INDEXES.get("failures_by_sc", {}).get(sc_id, [])
-    
+
     if not tech_ids:
         return header + "\nNo techniques found for this success criterion."
-    
+
     lines = [header]
-    
+
     # Separate sufficient/advisory from failures
     sufficient = [t for t in tech_ids if t not in failure_ids]
     failures = [t for t in tech_ids if t in failure_ids]
-    
+
     if sufficient:
         lines.append("## Sufficient & Advisory Techniques")
         for tid in sorted(sufficient):
@@ -844,12 +853,12 @@ def get_techniques(identifier: str) -> str:
             tech = TECHNIQUES.get(fid, {})
             cat = tech.get("category", "")
             lines.append(f"- **{fid}** ({cat}) — {TECH_TITLES.get(fid, '')}")
-    
+
     lines.append("")
     lines.append(f"📖 Full list: https://www.w3.org/WAI/WCAG22/Techniques/")
     lines.append("")
     lines.append("💡 Use `get_technique(\"GXXX\")` to view the full content of a specific technique.")
-    
+
     return "\n".join(lines)
 
 
@@ -857,7 +866,7 @@ def get_techniques(identifier: str) -> str:
 def get_technique(technique_id: str) -> str:
     """
     Get the full content of a specific WCAG technique by its ID.
-    
+
     Examples: "G103", "H2", "F3", "SL28"
     Returns the full technique description, applicability, examples, and tests.
     """
@@ -872,7 +881,7 @@ def get_technique(technique_id: str) -> str:
         return (f"Technique '{technique_id}' not found. Expected an id such as "
                 f"G18, H37, ARIA1, C45 or F78 — use get_techniques(\"<kryterium>\") "
                 f"to list the techniques for a success criterion.")
-    
+
     lines = [
         f"# {tid}",
         f"**Category:** {tech.get('category', '')}",
@@ -882,11 +891,11 @@ def get_technique(technique_id: str) -> str:
     if tech.get("applies_to"):
         lines.append(f"**Applies to:** {', '.join(tech['applies_to'])}")
         lines.append("")
-    
+
     content = tech.get("content_md", "")
     if content:
         lines.append(content)
-    
+
     return "\n".join(lines)
 
 
@@ -894,7 +903,7 @@ def get_technique(technique_id: str) -> str:
 def check_contrast(foreground: str, background: str) -> str:
     """
     Calculate WCAG contrast ratio between two hex colors.
-    
+
     Examples: check_contrast("#047857", "#FFFFFF"), check_contrast("000000", "fff")
     Returns contrast ratio and pass/fail for AA and AAA levels.
     """
@@ -934,31 +943,23 @@ def check_contrast(foreground: str, background: str) -> str:
     ])
 
 
-@mcp.tool()
-def get_failures(identifier: str) -> str:
-    """
-    Get common failures for a WCAG 2.2 success criterion.
-    
-    Examples: "1.3.2", "focus-visible", "2.4.7"
-    Returns failure IDs with category and description snippet.
-    Use get_technique(id) for full content.
-    """
+def _failures(identifier: str) -> str:
     sc_id = _resolve(identifier) or identifier
     sc = SCS.get(sc_id, {})
-    
+
     title = f"{sc.get('id', '')} — {sc.get('title', identifier)}" if sc else identifier
     header = f"# Common Failures for {title}\n"
-    
+
     # Collect failures: from failures_by_sc + F-prefix techniques from tech_by_sc
     failures = set(INDEXES.get("failures_by_sc", {}).get(sc_id, []))
     all_techs = INDEXES.get("tech_by_sc", {}).get(sc_id, [])
     for tid in all_techs:
         if tid.startswith('F') and tid not in failures:
             failures.add(tid)
-    
+
     if not failures:
         return header + "\nNo documented failures for this success criterion."
-    
+
     lines = [header]
     for fid in sorted(failures):
         tech = TECHNIQUES.get(fid, {})
@@ -968,68 +969,75 @@ def get_failures(identifier: str) -> str:
             lines.append(f"- **{fid}** ({cat}) — {snippet}…")
         else:
             lines.append(f"- **{fid}** ({cat})")
-    
+
     return "\n".join(lines)
 
 
-@mcp.tool()
-def get_understanding(identifier: str, full: bool = False) -> str:
-    """
-    Get the Understanding document for a WCAG 2.2 success criterion.
-
-    By default returns a condensed summary (about 2 KB). Pass full=True for the
-    complete W3C document, which can run to 40 KB — ask for it only when the
-    summary is not enough.
-
-    Examples: get_understanding("1.4.3"), get_understanding("2.4.11", full=True)
-    """
+def _understanding_parts(identifier):
+    """Wspólne dane dla obu narzędzi Understanding albo komunikat o błędzie."""
     sc_id = _resolve(identifier) or identifier
     sc = SCS.get(sc_id)
-
     if not sc:
-        return f"SC '{identifier}' not found."
-
-    title = sc.get("title", "")
+        return None, f"SC '{identifier}' not found."
     pl_title = SC_PL.get(sc_id, "")
-    heading = f"# {sc_id} — {title}" + (f"  |  {pl_title}" if pl_title else "")
-    url = sc.get("w3c_url", "#")
-
-    short_md = sc.get("understanding_short_md", "")
-    full_md = sc.get("understanding_full_md", "")
-
-    if full:
-        body = full_md or short_md
-        if not body:
-            return f"No understanding document for '{identifier}'."
-        return f"{heading}\n\n{body}\n\n📖 [Full understanding]({url})"
-
-    if short_md:
-        hint = ""
-        if full_md and len(full_md) > len(short_md):
-            hint = (f'\n\n💡 To streszczenie ({len(short_md)} znaków). '
-                    f'Pełny dokument ({len(full_md)} znaków): '
-                    f'get_understanding("{sc_id}", full=True)')
-        return f"{heading} — streszczenie\n\n{short_md}{hint}\n\n📖 [Full understanding]({url})"
-
-    if full_md:
-        return f"{heading}\n\n{full_md}\n\n📖 [Full understanding]({url})"
-
-    return f"No understanding document for '{identifier}'."
+    heading = f"# {sc_id} — {sc.get('title', '')}" + (f"  |  {pl_title}" if pl_title else "")
+    return (sc_id, sc, heading, sc.get("w3c_url", "#")), None
 
 
 @mcp.tool()
-def get_principle(principle_id: str) -> str:
+def get_understanding(identifier: str) -> str:
     """
-    Get a WCAG 2.2 principle with its guidelines and success criteria.
-    
-    Examples: "1" (Perceivable), "2" (Operable), "3", "4"
+    Get a structured summary of the Understanding document for a WCAG 2.2
+    success criterion (1-4 KB: intent, how to apply it, exceptions, common
+    failures, related SCs). Use this by default.
+
+    Examples: get_understanding("1.4.3"), get_understanding("focus-visible")
     """
+    parts, error = _understanding_parts(identifier)
+    if error:
+        return error
+    sc_id, sc, heading, url = parts
+    short_md = sc.get("understanding_short_md", "")
+    full_md = sc.get("understanding_full_md", "")
+    if not short_md:
+        return f"No understanding summary for '{identifier}'."
+
+    hint = ""
+    if full_md:
+        hint = (f"\n\nℹ️ Pełny dokument W3C ({len(full_md)} znaków) jest dostępny przez "
+                f"get_full_understanding — wywołuj go tylko na wyraźną prośbę użytkownika.")
+    return f"{heading} — streszczenie\n\n{short_md}{hint}\n\n📖 [Full understanding]({url})"
+
+
+@mcp.tool()
+def get_full_understanding(identifier: str) -> str:
+    """
+    Get the COMPLETE W3C Understanding document for a WCAG 2.2 success
+    criterion — typically 5-40 KB.
+
+    Call this ONLY when the user explicitly asks for the full Understanding
+    document (e.g. "show the full Understanding text", "cały dokument").
+    For everything else use get_understanding, which returns a summary.
+
+    Example: get_full_understanding("1.4.3")
+    """
+    parts, error = _understanding_parts(identifier)
+    if error:
+        return error
+    sc_id, sc, heading, url = parts
+    full_md = sc.get("understanding_full_md", "")
+    if not full_md:
+        return f"No understanding document for '{identifier}'."
+    return f"{heading}\n\n{full_md}\n\n📖 [Full understanding]({url})"
+
+
+def _principle(principle_id: str) -> str:
     p = PRINCIPLES.get(principle_id)
     if not p:
         return f"Principle '{principle_id}' not found. Use 1-4."
-    
+
     lines = [f"# Principle {p['num']}: {p['title']}", ""]
-    
+
     for gn in p.get("guidelines", []):
         g = GUIDELINES.get(gn, {})
         lines.append(f"## Guideline {g.get('num', gn)}: {g.get('title', '')}")
@@ -1037,57 +1045,38 @@ def get_principle(principle_id: str) -> str:
             sc = SCS.get(sc_id, {})
             lines.append(f"- **{sc.get('id', '')}** {sc.get('title', '')} ({sc.get('level', '')})")
         lines.append("")
-    
+
     return "\n".join(lines)
 
 
-@mcp.tool()
-def get_guideline(guideline_id: str) -> str:
-    """
-    Get a WCAG 2.2 guideline with its success criteria.
-    
-    Examples: "1.1" (Text Alternatives), "2.4" (Navigable), "3.3"
-    """
+def _guideline(guideline_id: str) -> str:
     g = GUIDELINES.get(guideline_id)
     if not g:
         return f"Guideline '{guideline_id}' not found. Examples: 1.1, 2.4, 3.3"
-    
+
     p = PRINCIPLES.get(g.get("principle", ""), {})
     lines = [
         f"# Guideline {g['num']}: {g['title']}",
         f"**Principle:** {g.get('principle', '')} — {p.get('title', '')}",
         "",
     ]
-    
+
     for sc_id in g.get("scs", []):
         sc = SCS.get(sc_id, {})
         lines.append(f"- **{sc.get('id', '')}** {sc.get('title', '')} ({sc.get('level', '')})")
-    
+
     return "\n".join(lines)
-
-
-@mcp.tool()
-def get_hierarchy(identifier: str) -> str:
-    """
-    Get a WCAG 2.2 principle (1-4) or guideline (e.g. 2.4) with its SCs.
-
-    Examples: "1" (Perceivable), "2.4" (Navigable), "3.1"
-    """
-    if "." in identifier:
-        return get_guideline(identifier)
-    else:
-        return get_principle(identifier)
 
 
 @mcp.tool()
 def list_scs(level: str = "") -> str:
     """
     List all WCAG 2.2 success criteria, optionally filtered by level.
-    
+
     Examples: list_scs(), list_scs("A"), list_scs("AA"), list_scs("AAA")
     """
     level_filter = level.upper() if level else None
-    
+
     if level_filter:
         sc_ids = INDEXES.get("by_level", {}).get(level_filter, [])
         if not sc_ids:
@@ -1096,7 +1085,7 @@ def list_scs(level: str = "") -> str:
     else:
         sc_ids = sorted(SCS.keys(), key=lambda x: [int(p) for p in x.split('.')])
         header = f"# WCAG 2.2 — All Levels ({len(sc_ids)})\n"
-    
+
     lines = [header]
     by_principle = {}
     for sc_id in sc_ids:
@@ -1105,27 +1094,30 @@ def list_scs(level: str = "") -> str:
         if p not in by_principle:
             by_principle[p] = []
         by_principle[p].append(sc)
-    
+
     for p_num in sorted(by_principle.keys()):
         p_title = PRINCIPLES.get(p_num, {}).get("title", "")
         lines.append(f"## Principle {p_num}: {p_title}")
         for sc in by_principle[p_num]:
             lines.append(f"- **{sc['id']}** {sc['title']} ({sc.get('level', '')})")
         lines.append("")
-    
+
     return "\n".join(lines)
 
 
 @mcp.tool()
-def get_pattern(pattern_name: str) -> str:
+def get_pattern(pattern_name: str = "") -> str:
     """
     Get a development pattern for a UI component (Combobox, Dialog, etc.).
 
     Returns native HTML alternatives, required ARIA attributes,
     keyboard interactions, and related SCs.
+    Call without a name to list all available patterns.
 
-    Examples: "combobox", "dialog", "carousel"
+    Examples: get_pattern(), get_pattern("combobox"), get_pattern("dialog")
     """
+    if not pattern_name.strip():
+        return _list_patterns()
     pname = pattern_name.strip().lower()
     pattern = PATTERNS.get(pname)
     if not pattern:
@@ -1221,16 +1213,7 @@ def get_pattern(pattern_name: str) -> str:
     return "\n".join(lines)
 
 
-@mcp.tool()
-def list_patterns() -> str:
-    """
-    List all available UI component patterns with descriptions.
-
-    Each pattern describes: native HTML alternatives, required ARIA attributes,
-    keyboard interactions, and related SCs.
-
-    Use get_pattern(name) for full details of a specific pattern.
-    """
+def _list_patterns() -> str:
     if not PATTERNS:
         return "No patterns defined."
 
@@ -1392,21 +1375,18 @@ def status() -> str:
         f"**Data size:** {os.path.getsize(DATA_PATH) / 1024:.0f} KB\n"
         f"\n"
         f"### Tools\n"
-        f"- `get_sc(identifier)` — Get a success criterion (with Polish titles)\n"
-        f"- `get_techniques(identifier)` — Get techniques for an SC\n"
+        f"- `get(identifier)` — Principle (1-4), guideline (2.4) or SC (with Polish titles)\n"
+        f"- `get_techniques(identifier, failures_only)` — Techniques and failures for an SC\n"
         f"- `get_technique(technique_id)` — Get full content of a technique\n"
-        f"- `get_failures(identifier)` — Get failures for an SC\n"
         f"- `get_definition(term)` — Get a term definition\n"
-        f"- `get_understanding(identifier)` — Get understanding doc\n"
+        f"- `get_understanding(identifier)` — Understanding summary (default)\n"
+        f"- `get_full_understanding(identifier)` — Full Understanding doc, only on explicit request\n"
         f"- `check_contrast(foreground, background)` — Check WCAG contrast ratio\n"
-        f"- `get_hierarchy(id)` — Get a principle (1-4) or guideline (e.g. 2.4)\n"
         f"- `list_scs(level)` — List SCs, filter by A/AA/AAA\n"
         f"- `search(query)` — Search across all content\n"
-        f"- `graph_query(entity)` — Query graph: neighbors, paths, categories\n"
+        f"- `graph_query(entity)` — Query graph; without entity lists categories\n"
         f"- `graph_between(entity_a, entity_b)` — Find connections between two entities\n"
-        f"- `graph_categories()` — List thematic categories with statistics\n"
-        f"- `get_pattern(name)` — Get a development pattern (combobox, dialog...)\n"
-        f"- `list_patterns()` — List available patterns\n"
+        f"- `get_pattern(name)` — Development pattern; without name lists patterns\n"
         f"- `status()` — This status message"
     )
 
@@ -1415,15 +1395,18 @@ def status() -> str:
 
 
 @mcp.tool()
-def graph_query(entity: str) -> str:
+def graph_query(entity: str = "") -> str:
     """
     Query the WCAG knowledge graph for an entity (SC, technique, or category).
     Returns its neighbors, connections, and categories.
+    Call without an entity to list thematic categories with statistics.
 
-    Examples: "1.4.3", "G18", "Fokus", "non-text-content"
+    Examples: graph_query(), "1.4.3", "G18", "Fokus", "non-text-content"
     """
     if GRAPH is None:
         return "Graph is not available. Install: pip install networkx"
+    if not entity.strip():
+        return _graph_categories()
 
     # Resolve the raw input to a node ID
     node_id = _resolve_graph_node(entity)
@@ -1550,15 +1533,7 @@ def graph_between(entity_a: str, entity_b: str) -> str:
     return "\n".join(lines)
 
 
-@mcp.tool()
-def graph_categories() -> str:
-    """
-    List all thematic categories with statistics:
-    how many SCs and techniques each contains.
-    """
-    if GRAPH is None:
-        return "Graph is not available. Install: pip install networkx"
-
+def _graph_categories() -> str:
     lines = ["# Kategorie tematyczne WCAG 2.2\n"]
     for cat_name in sorted(CATEGORIES.keys()):
         cat_node = "CAT:" + cat_name
@@ -1791,9 +1766,9 @@ def main():
     if args.transport == "sse":
         import uvicorn
         from starlette.middleware.base import BaseHTTPMiddleware
-        
+
         sse_app = mcp.sse_app()
-        
+
         class NoBufferMiddleware(BaseHTTPMiddleware):
             async def dispatch(self, request, call_next):
                 # Check API key for SSE
@@ -1812,11 +1787,11 @@ def main():
                 response.headers["Pragma"] = "no-cache"
                 response.headers["Connection"] = "keep-alive"
                 return response
-        
+
         app = NoBufferMiddleware(sse_app)
         banner(f"  Nasłuch: http://{args.host}:{args.port}/sse")
         uvicorn.run(app, host=args.host, port=args.port, log_level="info")
-    
+
     elif args.transport == "streamable-http":
         import uvicorn
         raw_app = mcp.streamable_http_app()
@@ -1824,7 +1799,7 @@ def main():
         app = APIKeyMiddleware(MCPLogMiddleware(raw_app), api_key)
         banner(f"  Nasłuch: http://{args.host}:{args.port}/mcp")
         uvicorn.run(app, host=args.host, port=args.port, log_level="info")
-    
+
     else:
         # stdio — logowanie ograniczone (brak łatwego hooka w MCP stdio)
         log.warning("  Tryb stdio — logowanie żądań tylko na poziomie serwera")

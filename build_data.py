@@ -14,6 +14,8 @@ import sys
 import time
 from pathlib import Path
 
+from apply_summaries import load_summaries
+
 # ── paths ──
 REPO_DIR = Path(__file__).parent / "wcag-repo"
 OUTPUT = Path(__file__).parent / "wcag-data.json"
@@ -313,7 +315,7 @@ def build_understanding(sc_map):
                 md = _pandoc(fpath)
                 if md:
                     full = _fix_w3c_links(md)
-                    # Mechanical short_md: "In brief" + "Intent" sections (placeholder until LLM summary)
+                    # Mechanical short_md: "In brief" + "Intent" sections (overridden by understanding_summaries.md)
                     brief = ""
                     intent = ""
                     m = re.search(r'## In brief(.+?)(?=:::$)', full, re.DOTALL)
@@ -456,12 +458,14 @@ def main():
           f"{sum(len(sc.get('techniques',[])) for sc in scs.values())} total edges")
 
     print("Merging understanding into SCs...")
+    summaries = load_summaries()
     merge_count = 0
     for sc_id, sc in scs.items():
         slug = sc["slug"]
         und = understanding.get(slug, {})
         sc["understanding_full_md"] = und.get("full_md", "")
-        sc["understanding_short_md"] = und.get("short_md", "")
+        # Ręczne streszczenie ma pierwszeństwo przed wyciągiem mechanicznym
+        sc["understanding_short_md"] = summaries.get(sc_id) or und.get("short_md", "")
         if und.get("full_md"):
             merge_count += 1
     print(f"  → {merge_count}/{len(scs)} SCs have understanding docs")

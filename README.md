@@ -50,7 +50,7 @@ Umożliwia asystentom AI (Hermes, Claude Code, Cursor, Copilot i inne) udzielani
 
 - **Python 3.10+**
 - **pip: `mcp`** (pakiet SDK) — `pip install mcp`
-- Opcjonalnie: `networkx` — narzędzia grafu (`graph_query`, `graph_between`, `graph_categories`)
+- Opcjonalnie: `networkx` — narzędzia grafu (`graph_query`, `graph_between`)
 - Wyszukiwanie nie wymaga żadnej usługi zewnętrznej — indeks FTS5 jest wbudowany w `embeddings/search.db`
 
 ```bash
@@ -163,21 +163,18 @@ Serwer udostępnia następujące narzędzia MCP:
 
 | Narzędzie | Opis |
 |---|---|
-| `get_sc(identifier)` | Pobiera kryterium sukcesu (np. `"1.1.1"`, `"non-text-content"`) |
+| `get(identifier)` | Zasada (`"1"`), wytyczna (`"2.4"`) lub kryterium sukcesu (`"1.1.1"`, `"non-text-content"`, `"kontrast"`) |
 | `get_definition(term)` | Definicja terminu WCAG (np. `"assistive technology"`) |
-| `get_techniques(identifier)` | Lista technik dla SC |
+| `get_techniques(identifier, failures_only)` | Techniki i błędy dla SC; `failures_only=True` — tylko błędy |
 | `get_technique(technique_id)` | Pełna treść techniki (np. `"G18"`, `"H37"`, `"F3"`) |
-| `get_failures(identifier)` | Najczęstsze błędy dla SC |
-| `get_understanding(identifier)` | Dokument Understanding dla SC |
+| `get_understanding(identifier)` | Streszczenie dokumentu Understanding dla SC (domyślnie) |
+| `get_full_understanding(identifier)` | Pełny dokument Understanding W3C (5–40 KB) — tylko na wyraźną prośbę |
 | `list_scs(level)` | Lista SC, opcjonalnie filtrowana (`"A"`, `"AA"`, `"AAA"`) |
-| `get_hierarchy(id)` | Zasada (1-4) lub wytyczna (np. `"2.4"`) z listą SC |
 | `check_contrast(fg, bg)` | Kalkulator kontrastu WCAG (hex) |
 | `search(query)` | Wyszukiwanie pełnotekstowe FTS5 (kryteria, definicje, techniki; PL i EN) |
-| `get_pattern(name)` | Wzorzec ARIA APG (np. `"combobox"`, `"dialog"`, `"tooltip"`) |
-| `list_patterns()` | Lista dostępnych wzorców |
-| `graph_query(entity)` | Zapytanie do grafu wiedzy |
+| `get_pattern(name)` | Wzorzec ARIA APG (np. `"combobox"`, `"dialog"`); bez nazwy — lista wzorców |
+| `graph_query(entity)` | Zapytanie do grafu wiedzy; bez argumentu — kategorie tematyczne |
 | `graph_between(a, b)` | Połączenia między dwoma encjami w grafie |
-| `graph_categories()` | Kategorie tematyczne ze statystykami |
 | `status()` | Status serwera i statystyki danych |
 
 ---
@@ -209,7 +206,7 @@ mcp_servers:
     timeout: 60
 ```
 
-Po restarcie Hermesa narzędzia będą dostępne jako `mcp_wcag22_get_sc`, `mcp_wcag22_search` itd.
+Po restarcie Hermesa narzędzia będą dostępne jako `mcp_wcag22_get`, `mcp_wcag22_search` itd.
 
 ### Claude Desktop / Code
 
@@ -402,7 +399,7 @@ curl -X POST http://127.0.0.1:9100/mcp \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -H "X-API-Key: tajny-klucz" \
-  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get_sc","arguments":{"identifier":"1.4.3"}}}'
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get","arguments":{"identifier":"1.4.3"}}}'
 ```
 
 ### Sprawdzenie statusu

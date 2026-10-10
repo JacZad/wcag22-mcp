@@ -34,26 +34,25 @@ FAILURE_MARKERS = (
 # (narzędzie, argumenty, minimalna sensowna długość odpowiedzi)
 CHECKS = [
     ("status",            (),                              200),
-    ("get_sc",            ("1.4.3",),                      300),
-    ("get_sc",            ("kontrast",),                   300),
-    ("get_sc",            ("non-text-content",),           300),
-    ("get_sc",            ("4.1.1",),                      200),
+    ("get",               ("1.4.3",),                      300),
+    ("get",               ("kontrast",),                   300),
+    ("get",               ("non-text-content",),           300),
+    ("get",               ("4.1.1",),                      200),
     ("get_definition",    ("assistive technology",),       200),
     ("get_techniques",    ("1.1.1",),                      200),
     ("get_technique",     ("G18",),                        500),
     ("get_technique",     ("g18",),                        500),
     ("get_technique",     ("G214",),                       300),
-    ("get_failures",      ("2.4.7",),                      100),
+    ("get_techniques",    ("2.4.7", True),                 100),
     ("get_understanding", ("1.4.3",),                      500),
-    ("get_understanding", ("1.4.3", True),                1000),
+    ("get_full_understanding", ("1.4.3",),              1000),
     ("check_contrast",    ("#047857", "#FFFFFF"),          200),
     ("check_contrast",    ("000", "fff"),                  200),
-    ("get_principle",     ("1",),                          300),
-    ("get_guideline",     ("2.4",),                        200),
-    ("get_hierarchy",     ("2.4",),                        200),
+    ("get",               ("1",),                          300),
+    ("get",               ("2.4",),                        200),
     ("list_scs",          ("AA",),                         500),
     ("get_pattern",       ("combobox",),                   500),
-    ("list_patterns",     (),                              500),
+    ("get_pattern",       (),                              500),
     # Progi dobrane tak, żeby odróżnić pełny indeks od trybu awaryjnego:
     # przy sprawnym FTS5 te zapytania zwracają odpowiednio ok. 2800, 1300 i 600
     # znaków, a bez indeksu — 665, 284 i 253.
@@ -63,7 +62,7 @@ CHECKS = [
     ("graph_query",       ("1.4.3",),                      300),
     ("graph_query",       ("combobox",),                   200),
     ("graph_between",     ("1.4.3", "1.4.1"),              200),
-    ("graph_categories",  (),                             1000),
+    ("graph_query",       (),                             1000),
 ]
 
 
