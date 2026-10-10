@@ -28,5 +28,6 @@ sc_map.py
 categories-en.json
 patterns.json
 deploy-cloudrun.sh
+deploy-mikrus.sh
 uv.lock
 pyproject.toml

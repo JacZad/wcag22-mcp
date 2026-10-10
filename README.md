@@ -241,6 +241,14 @@ Argumenty: ścieżka/do/server.py
 
 ## Deployment
 
+### Mikrus (Docker)
+
+```bash
+MIKRUS_HOST=srv12.mikr.us MIKRUS_SSH_PORT=10123 MIKRUS_APP_PORT=20123 ./deploy-mikrus.sh
+```
+
+Skrypt wysyła `HEAD` przez `git archive`, buduje obraz na serwerze i uruchamia kontener z `--restart unless-stopped` i limitem 300 MB RAM. Przy pierwszym wdrożeniu generuje klucz API w `~/wcag22-mcp/.env`. HTTPS zapewnia subdomena z panelu mikr.us (np. `wcag.bieda.it`) przypięta do `MIKRUS_APP_PORT`.
+
 ### Cloudflare Tunnel
 
 > **Uwaga:** Przy deploymencie przez Cloudflare Tunnel mogą wystąpić błędy `502 Bad Gateway` lub `520 unknown origin error`. Poniższa konfiguracja rozwiązuje te problemy.
