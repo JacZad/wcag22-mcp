@@ -8,7 +8,7 @@ Indexes four kinds of documents into a single FTS5 table:
               exceptions and the short Understanding summary
   definition  glossary terms
   technique   techniques and failures — id, category, applied SCs and the
-              generated summary (falls back to the technique body)
+              technique body
 
 The Polish titles are read straight out of server.py so there is one source of
 truth for them. Queries therefore work in both languages.
@@ -29,7 +29,6 @@ ROOT = Path(__file__).parent
 DATA = ROOT / "wcag-data.json"
 SERVER = ROOT / "server.py"
 INDEX_DIR = ROOT / "embeddings"
-TECH_SUMMARIES = INDEX_DIR / "tech_index.json"
 
 INDEX_DIR.mkdir(exist_ok=True)
 
@@ -50,16 +49,6 @@ def load_sc_pl():
     raise RuntimeError("SC_PL not found in server.py")
 
 
-def load_tech_summaries():
-    """Map technique id → generated summary. Optional; missing file is fine."""
-    if not TECH_SUMMARIES.is_file():
-        print(f"  ! {TECH_SUMMARIES.name} missing — techniques indexed from their body only")
-        return {}
-    with open(TECH_SUMMARIES, encoding="utf-8") as f:
-        payload = json.load(f)
-    return {item["id"]: item.get("summary", "") for item in payload.get("items", [])}
-
-
 def strip_markdown(md, limit=1500):
     """Flatten markdown to plain-ish text so FTS tokens are not stuck to syntax."""
     text = re.sub(r"```.*?```", " ", md, flags=re.DOTALL)
@@ -76,7 +65,6 @@ def build():
     definitions = wcag["definitions"]
     techniques = wcag["techniques"]
     sc_pl = load_sc_pl()
-    summaries = load_tech_summaries()
 
     db_path = INDEX_DIR / "search.db"
 
@@ -130,17 +118,13 @@ def build():
 
     # ── techniques and failures ──
     n_tech = 0
-    n_summarised = 0
     for tid, tech in techniques.items():
         applied = []
         for sc_id in tech.get("applies_to", []):
             sc = scs.get(sc_id, {})
             applied.append(f"{sc_id} {sc.get('title', '')} {sc_pl.get(sc_id, '')}".strip())
 
-        summary = summaries.get(tid, "")
-        if summary:
-            n_summarised += 1
-        body = summary or strip_markdown(tech.get("content_md", ""))
+        body = strip_markdown(tech.get("content_md", ""))
 
         parts = [tid, tech.get("category", ""), " ".join(applied), body]
         text = "\n".join(p for p in parts if p)
@@ -161,7 +145,7 @@ def build():
     size_kb = db_path.stat().st_size / 1024
     print(f"  SCs:         {n_sc}")
     print(f"  Definitions: {n_def}")
-    print(f"  Techniques:  {n_tech} ({n_summarised} with a generated summary)")
+    print(f"  Techniques:  {n_tech}")
     print(f"  Written:     {db_path} ({size_kb:.0f} KB)")
 
 

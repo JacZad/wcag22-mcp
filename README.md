@@ -419,13 +419,15 @@ curl -X POST http://127.0.0.1:9100/mcp \
 
 ```
 ├── server.py            # Serwer MCP (główny plik)
-├── build_data.py        # Skrypt budujący wcag-data.json ze źródeł W3C
+├── build_data.py        # Skrypt budujący wcag-data.json ze źródeł W3C (bez technik Flash/Silverlight)
+├── sc_map.py            # Mapa kryteriów sukcesu używana przez build_data.py
 ├── wcag-data.json       # Baza danych WCAG 2.2 (generowana)
+├── understanding_summaries.md # Streszczenia dokumentów Understanding (źródło dla get_understanding)
+├── apply_summaries.py   # Wgrywa streszczenia do wcag-data.json bez pełnej przebudowy
 ├── build_search_index.py # Skrypt budujący indeks FTS5
 ├── smoke_test.py        # Test dymny wszystkich narzędzi (uruchamiany w Cloud Build)
-├── embeddings/          # Indeks wyszukiwania (generowany)
-│   ├── search.db        # Baza SQLite FTS5 — jedyny plik używany w czasie działania
-│   └── tech_index.json  # Podsumowania technik (materiał wejściowy dla indeksu)
+├── embeddings/
+│   └── search.db        # Baza SQLite FTS5 — jedyny plik używany w czasie działania
 ├── patterns/            # Definicje wzorców ARIA APG (YAML/JSON)
 └── README.md
 ```

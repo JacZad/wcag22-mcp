@@ -867,7 +867,7 @@ def get_technique(technique_id: str) -> str:
     """
     Get the full content of a specific WCAG technique by its ID.
 
-    Examples: "G103", "H2", "F3", "SL28"
+    Examples: "G103", "H2", "F3", "ARIA14"
     Returns the full technique description, applicability, examples, and tests.
     """
     tid = technique_id.strip()

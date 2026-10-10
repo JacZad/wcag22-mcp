@@ -38,7 +38,7 @@ def _pandoc(path):
     """Convert an HTML file to Markdown via pandoc."""
     r = subprocess.run(
         ["pandoc", "-f", "html", "-t", "markdown", "--wrap=preserve", str(path)],
-        capture_output=True, text=True, timeout=30
+        capture_output=True, text=True, encoding="utf-8", timeout=30
     )
     if r.returncode != 0:
         print(f"  ⚠ pandoc error on {path.name}: {r.stderr[:200]}", file=sys.stderr)
@@ -188,6 +188,11 @@ def build_scs(sc_map):
     return scs
 
 
+# Techniki dla nierozwijanych już technologii (Flash, Silverlight) pomijamy:
+# zaśmiecały wyniki wyszukiwania, a nikt już ich nie stosuje.
+EXCLUDED_TECH_CATEGORIES = {"flash", "silverlight"}
+
+
 def build_techniques():
     """Build technique entries from HTML files."""
     techniques = {}
@@ -197,6 +202,8 @@ def build_techniques():
     
     for cat_dir in sorted(tech_base.iterdir()):
         if not cat_dir.is_dir() or cat_dir.name.startswith('.'):
+            continue
+        if cat_dir.name in EXCLUDED_TECH_CATEGORIES:
             continue
         for fpath in sorted(cat_dir.iterdir()):
             if fpath.suffix != '.html':

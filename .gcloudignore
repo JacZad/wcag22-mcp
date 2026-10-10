@@ -9,23 +9,14 @@ __pycache__/
 wcag-repo/
 wcag-html/
 
-# Embeddingi po przejściu na FTS5 — obraz kopiuje wyłącznie search.db
-embeddings/*.npy
+# Obraz kopiuje z embeddings/ wyłącznie search.db
 embeddings/*.json
 
 # Skrypty budowania i badawcze
 build_data.py
 build_search_index.py
-build_summaries.py
-build_test_queries.py
-rebuild_*.py
-summarize_gemma.py
-scrape_w3c_mapping.py
-remove_flash_sl.py
-clean_md.py
-test_gemma_embed.py
-test_hybrid.py
-test_retrieval.py
+apply_summaries.py
+understanding_summaries.md
 sc_map.py
 categories-en.json
 patterns.json
