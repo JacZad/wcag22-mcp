@@ -2,6 +2,13 @@
 
 Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/), wersjonowanie według [SemVer](https://semver.org/lang/pl/). Do wersji 1.0 zmiana drugiej cyfry może oznaczać niekompatybilne zmiany w narzędziach.
 
+## [Niewydane]
+
+### Naprawione
+
+- Mapowanie technika → kryterium pochodzi teraz z `understanding.11tydata.js` (dane W3C), a nie z heurystyki po treści techniki. Wcześniej `get_techniques("2.1.1")` zwracało F105 (dotyczy 2.5.1, 2.1.1 pojawia się tylko w uwadze). Do przebudowy danych potrzebny jest `node`.
+- `get_pattern(name)` — parametr nazywał się `pattern_name`, więc `name` i `pattern_id` były ignorowane i zwracany był indeks wzorców.
+
 ## [0.2.0] — 2026-10-10
 
 ### Zmienione (niekompatybilne)

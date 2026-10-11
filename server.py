@@ -1109,7 +1109,7 @@ def list_scs(level: str = "") -> str:
 
 
 @mcp.tool()
-def get_pattern(pattern_name: str = "") -> str:
+def get_pattern(name: str = "") -> str:
     """
     Get a development pattern for a UI component (Combobox, Dialog, etc.).
 
@@ -1119,9 +1119,9 @@ def get_pattern(pattern_name: str = "") -> str:
 
     Examples: get_pattern(), get_pattern("combobox"), get_pattern("dialog")
     """
-    if not pattern_name.strip():
+    if not name.strip():
         return _list_patterns()
-    pname = pattern_name.strip().lower()
+    pname = name.strip().lower()
     pattern = PATTERNS.get(pname)
     if not pattern:
         available = ", ".join(sorted(PATTERNS.keys()))

@@ -376,7 +376,7 @@ Każde żądanie i odpowiedź są logowane z timestampem, nazwą narzędzia, arg
   📥 ZAPYTANIE  |  2026-07-25 12:30:15
 ========================================================================
   Narzędzie:    get_pattern()
-  Argumenty:    pattern_name=combobox
+  Argumenty:    name=combobox
   Źródło:       127.0.0.1
 ------------------------------------------------------------------------
   📤 ODPOWIEDŹ  |  2026-07-25 12:30:15  |  ✅ OK  |  6.2 KB  |  4ms

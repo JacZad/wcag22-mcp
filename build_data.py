@@ -343,10 +343,51 @@ def build_understanding(sc_map):
     return docs
 
 
-def build_indexes(scs, techniques, understanding=None):
-    """Build search and lookup indexes.
-    
-    Optionally accepts understanding docs to cross-reference technique→SC mappings."""
+def _load_associated_techniques():
+    """Autorytatywne mapowanie technika → SC z understanding.11tydata.js (W3C).
+
+    Zwraca {sc_id: [tid, ...]} (sufficient, advisory i failure razem) albo {}
+    gdy brak node/pliku. Bez tego techniki dostają SC tylko z heurystyki
+    po treści, która łapie przypadkowe wzmianki (np. 2.1.1 w uwadze F105).
+    """
+    import subprocess, tempfile
+    from sc_map import SC_MAP
+    src = REPO_DIR / "understanding" / "understanding.11tydata.js"
+    if not src.exists():
+        return {}
+    script = r"""import f from "./u.mjs";
+const m = f({}).associatedTechniques;
+const out = {};
+const walk = (o, s) => {
+  if (Array.isArray(o)) o.forEach(x => typeof x === "string" ? s.add(x) : walk(x, s));
+  else if (o && typeof o === "object") Object.values(o).forEach(v => walk(v, s));
+};
+for (const [k, v] of Object.entries(m)) {
+  const s = new Set();
+  walk(v, s);
+  out[k] = [...s].filter(x => /^[A-Z]+\d+$/.test(x));
+}
+console.log(JSON.stringify(out));
+"""
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        (tmp / "u.mjs").write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
+        (tmp / "dump.mjs").write_text(script, encoding="utf-8")
+        try:
+            res = subprocess.run(["node", "dump.mjs"], cwd=tmp, capture_output=True,
+                                 text=True, encoding="utf-8", check=True)
+        except (OSError, subprocess.CalledProcessError) as e:
+            print(f"  ⚠ brak mapowania z understanding.11tydata.js ({e})", file=sys.stderr)
+            return {}
+    by_sc = {}
+    for slug, tids in json.loads(res.stdout).items():
+        if slug in SC_MAP:
+            by_sc[SC_MAP[slug][0]] = tids
+    return by_sc
+
+
+def build_indexes(scs, techniques):
+    """Build search and lookup indexes (technique→SC wg techniques[*].applies_to)."""
     by_level = {"A": [], "AA": [], "AAA": []}
     by_version = {}
     tech_by_sc = {}
@@ -371,40 +412,12 @@ def build_indexes(scs, techniques, understanding=None):
             if sc_id not in search_index[key]:
                 search_index[key].append(sc_id)
     
-    # Source 1: technique → SC from applies_to
     for tid, tech in techniques.items():
         for sc_ref in tech["applies_to"]:
-            if sc_ref not in tech_by_sc:
-                tech_by_sc[sc_ref] = []
-            tech_by_sc[sc_ref].append(tid)
-            if tech["type"] == "Failure":
-                if sc_ref not in failures_by_sc:
-                    failures_by_sc[sc_ref] = []
-                failures_by_sc[sc_ref].append(tid)
-    
-    # Source 2: Understanding docs → technique cross-reference
-    # Scan each understanding doc for technique IDs and add those techniques to the SC
-    if understanding:
-        tech_pat = re.compile(r'\b((?:G|ARIA|H|C|F|SCR|PDF|SVR|SMIL|T|SL|FLASH|W)\d+)\b')
-        for slug, und in understanding.items():
-            sc_id = und.get("sc_id", "")
-            if not re.match(r'^\d+\.\d+\.\d+$', str(sc_id)):
-                continue
-            full_md = und.get("full_md", "")
-            for m in tech_pat.finditer(full_md):
-                tid = m.group(1)
-                if tid in techniques:
-                    if sc_id not in tech_by_sc:
-                        tech_by_sc[sc_id] = []
-                    if tid not in tech_by_sc[sc_id]:
-                        tech_by_sc[sc_id].append(tid)
-                    # Also mark as failure if F-prefix
-                    if tid.startswith('F'):
-                        if sc_id not in failures_by_sc:
-                            failures_by_sc[sc_id] = []
-                        if tid not in failures_by_sc[sc_id]:
-                            failures_by_sc[sc_id].append(tid)
-    
+            tech_by_sc.setdefault(sc_ref, []).append(tid)
+            if tech["category"] == "failures":
+                failures_by_sc.setdefault(sc_ref, []).append(tid)
+
     return {
         "by_level": by_level,
         "by_version": by_version,
@@ -429,6 +442,17 @@ def main():
     print("Building techniques...")
     techniques = build_techniques()
     print(f"  → {len(techniques)} techniques")
+
+    print("Applying W3C technique→SC mapping...")
+    assoc = _load_associated_techniques()
+    mapped = {}
+    for sc_id, tids in assoc.items():
+        for tid in tids:
+            if tid in techniques:
+                mapped.setdefault(tid, []).append(sc_id)
+    for tid, sc_ids in mapped.items():
+        techniques[tid]["applies_to"] = sorted(set(sc_ids), key=lambda x: [int(p) for p in x.split('.')])
+    print(f"  → {len(mapped)}/{len(techniques)} techniques mapped from W3C data")
     
     print("Building definitions...")
     definitions = build_definitions()
@@ -439,7 +463,7 @@ def main():
     print(f"  → {len(understanding)} docs")
     
     print("Building indexes...")
-    indexes = build_indexes(scs, techniques, understanding)
+    indexes = build_indexes(scs, techniques)
 
     print("Loading categories...")
     if CATEGORIES_FILE.exists():
