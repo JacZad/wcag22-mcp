@@ -1,7 +1,7 @@
 """Porównanie metod wyszukiwania w serwerze: FTS5 (search), graf, lookup JSON (get), hybryda.
 
 Użycie (z katalogu repo):
-    PYTHONUTF8=1 uv run python eval/run_eval.py [--misses]
+    PYTHONUTF8=1 uv run python eval/run_eval.py [--misses] [--en]
 
 Zadanie A: pytanie → właściwe kryterium. Zadanie B: kryterium → powiązane kryteria.
 Wejście: eval/eval_set.json. Serwer ładowany jest jako moduł, więc mierzymy
@@ -187,6 +187,10 @@ def evaluate_b(items):
 
 def main():
     data = json.load(open(ROOT / "eval" / "eval_set.json", encoding="utf-8"))
+    if "--en" in sys.argv:
+        for it in data["find"]:
+            if "q_en" in it:
+                it["q"], it["style"] = it["q_en"], "pl->en"
     a, b = evaluate_a(data["find"]), evaluate_b(data["related"])
     show_misses = "--misses" in sys.argv
 
@@ -225,18 +229,23 @@ def main():
                 print(f"  - {p['q']!r}  oczekiwano {p['expected']}  dostał {p['ranking'][:3]}")
 
     print(f"\n## B. Kryterium → powiązane kryteria ({len(data['related'])} kryteriów)\n")
-    print(f"{'system':32} {'recall@5':>9} {'recall@10':>10} {'śr. zwróconych':>15}")
+    # dev = zbiór, na którym dostrajano punktację grafu; holdout dopisano wcześniej.
+    split_of = {it["sc"]: it.get("split", "dev") for it in data["related"]}
+    print(f"{'system':32} {'dev@5':>6} {'dev@10':>7} {'hold@5':>7} {'hold@10':>8} {'zwróconych':>11}")
     for name, per in b.items():
-        n = len(per)
-        print(f"{name:32} {sum(p['r5'] for p in per)/n:9.0%} {sum(p['r10'] for p in per)/n:10.0%} "
-              f"{sum(p['n_returned'] for p in per)/n:15.1f}")
+        cells = []
+        for sp in ("dev", "holdout"):
+            sub = [p for p in per if split_of[p["sc"]] == sp]
+            cells += [sum(p["r5"] for p in sub) / len(sub), sum(p["r10"] for p in sub) / len(sub)]
+        n_ret = sum(p["n_returned"] for p in per) / len(per)
+        print(f"{name:32} {cells[0]:6.0%} {cells[1]:7.0%} {cells[2]:7.0%} {cells[3]:8.0%} {n_ret:11.1f}")
     if show_misses:
         for name in ("graph_query (jak widzi model)", "graf (idealnie uszeregowany)"):
             print(f"\n{name}:")
             for p in b[name]:
                 print(f"  {p['sc']}: oczekiwano {p['expected']}  top-10 {p['ranking']}")
 
-    out = ROOT / "eval" / "results.json"
+    out = ROOT / "eval" / ("results_en.json" if "--en" in sys.argv else "results.json")
     json.dump({"A": a, "B": b}, open(out, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 
 

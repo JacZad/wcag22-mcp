@@ -19,6 +19,7 @@ import argparse
 import hmac
 import json
 import logging
+import math
 import os
 import re
 import sys
@@ -1549,6 +1550,22 @@ def graph_query(entity: str = "") -> str:
             if len(entries) > len(shown):
                 lines.append(f"- {arrow} {label}: … i {len(entries) - len(shown)} więcej")
 
+    if ntype == "sc":
+        # Powiązania SC↔SC pokazujemy w jednej, uszeregowanej liście poniżej —
+        # osobne listy per relacja i kierunek, obcięte do kilkunastu pozycji
+        # po ID, gubiły najsilniejsze powiązania.
+        for groups in (to_neighbors, from_neighbors):
+            for rel in ("shares_techniques", "shares_definitions"):
+                groups.pop(rel, None)
+        related = _related_scs(node_id)
+        if related:
+            lines.append("### Powiązane kryteria (od najsilniej powiązanych)")
+            for nb in related[:_GRAPH_MAX_NEIGHBOURS]:
+                lines.append(f"- {_graph_label(nb)}")
+            if len(related) > _GRAPH_MAX_NEIGHBOURS:
+                lines.append(f"- … i {len(related) - _GRAPH_MAX_NEIGHBOURS} więcej")
+            lines.append("")
+
     render(to_neighbors, _REL_OUT, "→", "Krawędzie wychodzące")
     render(from_neighbors, _REL_IN, "←", "Krawędzie przychodzące")
 
@@ -1614,6 +1631,43 @@ def graph_between(entity_a: str, entity_b: str) -> str:
         lines.append("\n❌ Brak ścieżki między tymi węzłami.")
 
     return "\n".join(lines)
+
+
+def _related_scs(node_id: str):
+    """
+    Kryteria powiązane z danym, od najsilniejszych: lista węzłów SC.
+
+    Wynik to suma wspólnych technik, wspólnych definicji (tłumionych dla
+    kryteriów-hubów, które dzielą definicje prawie ze wszystkimi) i członkostwa
+    w tej samej kategorii lub wzorcu (tłumionego rozmiarem grupy). Same wagi
+    krawędzi dawały gorszy ranking, bo słownik definicji jest wspólny dla
+    większości kryteriów. Parametry sprawdzone na eval/ (zbiory dev i holdout).
+    """
+    def hub(nid):
+        return sum(1 for edges in (GRAPH.out_edges(nid, data=True), GRAPH.in_edges(nid, data=True))
+                   for _, _, d in edges if d.get("relation") == "shares_definitions")
+
+    score = {}
+
+    def add(nid, pts):
+        score[nid] = score.get(nid, 0.0) + pts
+
+    for u, v, d in list(GRAPH.out_edges(node_id, data=True)) + list(GRAPH.in_edges(node_id, data=True)):
+        other = v if u == node_id else u
+        if not other.startswith("SC:") or other == node_id:
+            continue
+        rel = d.get("relation")
+        if rel == "shares_techniques":
+            add(other, d["weight"])
+        elif rel == "shares_definitions":
+            add(other, d["weight"] / math.log(2 + hub(other)))
+    for _, group in GRAPH.out_edges(node_id):
+        if group.startswith(("CAT:", "PAT:")):
+            members = [m for _, m in GRAPH.out_edges(group) if m.startswith("SC:") and m != node_id]
+            for m in members:
+                add(m, 1.0 / math.log(2 + len(members)))
+
+    return sorted(score, key=lambda n: (-score[n], _graph_sort_key(n)))
 
 
 def _graph_categories() -> str:
