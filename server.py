@@ -24,7 +24,7 @@ import re
 import sys
 import time
 import unicodedata
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 # Wersja serwera — trzymaj w zgodzie z pyproject.toml i CHANGELOG.md.
@@ -70,8 +70,68 @@ if not IN_CLOUD_RUN:
         log.warning(f"Nie mogę pisać do pliku logu: {e}")
 
 
+# Strukturalny log wywołań narzędzi (JSONL, jeden rekord na tools/call) —
+# do analizy: które narzędzia model wybiera, z jakimi argumentami, co dostaje
+# z powrotem. Czytelny log powyżej służy tylko do podglądu na żywo.
+CALLS_FILE = None
+calls_log = logging.getLogger("wcag22.calls")
+calls_log.setLevel(logging.INFO)
+calls_log.propagate = False
+
+if IN_CLOUD_RUN:
+    # Cloud Logging rozpoznaje linie JSON na stderr jako wpisy strukturalne.
+    _ch = logging.StreamHandler(sys.stderr)
+    _ch.setFormatter(logging.Formatter("%(message)s"))
+    calls_log.addHandler(_ch)
+else:
+    try:
+        from logging.handlers import RotatingFileHandler
+        CALLS_FILE = LOG_DIR / "calls.jsonl"
+        _ch = RotatingFileHandler(CALLS_FILE, maxBytes=10_000_000, backupCount=5, encoding="utf-8")
+        _ch.setFormatter(logging.Formatter("%(message)s"))
+        calls_log.addHandler(_ch)
+    except OSError as e:
+        CALLS_FILE = None
+        log.warning(f"Nie mogę pisać do calls.jsonl: {e}")
+
+# WCAG22_LOG_FULL=1 zapisuje pełną treść odpowiedzi zamiast początku.
+_LOG_FULL = os.environ.get("WCAG22_LOG_FULL") == "1"
+_CALL_PREVIEW = 1000
+
+
 def _fmt_ts():
     return datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _result_text(resp_bytes):
+    """Wyciągnij tekst wyniku i flagę błędu z odpowiedzi JSON-RPC (json_response=True)."""
+    try:
+        data = json.loads(resp_bytes)
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return resp_bytes.decode("utf-8", "replace"), None
+    if "error" in data:
+        return str(data["error"]), True
+    result = data.get("result") or {}
+    text = "\n".join(c.get("text", "") for c in result.get("content", []) if isinstance(c, dict))
+    return text, bool(result.get("isError"))
+
+
+def log_call(remote, user_agent, tool_name, tool_args, elapsed_ms, resp_bytes, status, total_bytes=None):
+    """Zapisz jeden rekord JSONL dla wywołania narzędzia."""
+    text, is_error = _result_text(resp_bytes)
+    rec = {
+        "ts": datetime.now(timezone.utc).isoformat(timespec="milliseconds"),
+        "ip": remote,
+        "ua": user_agent,
+        "tool": tool_name,
+        "args": {k: _trunc(v, 500) for k, v in (tool_args or {}).items()},
+        "ms": elapsed_ms,
+        "http": status,
+        "bytes": total_bytes if total_bytes is not None else len(resp_bytes),
+        "error": is_error,
+        "result": text if _LOG_FULL else text[:_CALL_PREVIEW],
+    }
+    calls_log.info(json.dumps(rec, ensure_ascii=False))
 
 
 def _trunc(s, maxlen=300):
@@ -206,6 +266,7 @@ class APIKeyMiddleware:
 
 # Ile bajtów odpowiedzi zatrzymać na potrzeby logu
 _LOG_BODY_LIMIT = 4096
+_CAPTURE_LIMIT = 512 * 1024
 
 
 class MCPLogMiddleware:
@@ -235,6 +296,7 @@ class MCPLogMiddleware:
 
         body = b"".join(body_chunks)
         remote = scope.get("client", ["?"])[0] or "?"
+        user_agent = dict(scope.get("headers", [])).get(b"user-agent", b"").decode("utf-8", "replace")
 
         # Sparsuj żądanie MCP
         tool_name = ""
@@ -276,12 +338,14 @@ class MCPLogMiddleware:
         start = time.time()
         response_chunks = []
         response_bytes = 0
+        status = 0
 
         async def passthrough_send(msg):
             """Przepuść odpowiedź z anti-buffering headers i zbierz próbkę treści."""
-            nonlocal response_chunks, response_bytes
+            nonlocal response_chunks, response_bytes, status
 
             if msg["type"] == "http.response.start":
+                status = msg.get("status", 0)
                 # Dodaj nagłówki zapobiegające buforowaniu przez Cloudflare/proxy
                 h = list(msg.get("headers", []))
                 sent_headers = {k.lower() for k, _ in h}
@@ -299,9 +363,10 @@ class MCPLogMiddleware:
             elif msg["type"] == "http.response.body":
                 chunk = msg.get("body", b"")
                 response_bytes += len(chunk)
-                # Do logu wystarczy początek — nie kopiujemy całej odpowiedzi,
-                # która przy get_full_understanding ma kilkadziesiąt KB.
-                if response_bytes <= _LOG_BODY_LIMIT:
+                # Cała odpowiedź (get_full_understanding to kilkadziesiąt KB) jest
+                # potrzebna, żeby sparsować JSON i odczytać flagę błędu; limit
+                # chroni tylko przed absurdalnie dużą odpowiedzią.
+                if response_bytes <= _CAPTURE_LIMIT:
                     response_chunks.append(chunk)
 
             await send(msg)
@@ -311,10 +376,15 @@ class MCPLogMiddleware:
         except Exception as e:
             elapsed_ms = int((time.time() - start) * 1000)
             log_response(tool_name, elapsed_ms, "", error=str(e))
+            if tool_name:
+                log_call(remote, user_agent, tool_name, tool_args, elapsed_ms, b"", 500)
             raise
 
         elapsed_ms = int((time.time() - start) * 1000)
-        resp_text = b"".join(response_chunks).decode("utf-8", errors="replace")
+        if tool_name:
+            log_call(remote, user_agent, tool_name, tool_args, elapsed_ms,
+                     b"".join(response_chunks), status, response_bytes)
+        resp_text = b"".join(response_chunks)[:_LOG_BODY_LIMIT].decode("utf-8", errors="replace")
         log_response(tool_name, elapsed_ms, resp_text, error=None,
                      truncated=response_bytes > _LOG_BODY_LIMIT)
 
