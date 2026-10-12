@@ -247,7 +247,7 @@ Argumenty: ścieżka/do/server.py
 MIKRUS_HOST=srv12.mikr.us MIKRUS_SSH_PORT=10123 MIKRUS_APP_PORT=20123 ./deploy-mikrus.sh
 ```
 
-Skrypt wysyła `HEAD` przez `git archive`, buduje obraz na serwerze i uruchamia kontener z `--restart unless-stopped` i limitem 300 MB RAM. Przy pierwszym wdrożeniu generuje klucz API w `~/wcag22-mcp/.env`. HTTPS zapewnia subdomena z panelu mikr.us (np. `wcag.bieda.it`) przypięta do `MIKRUS_APP_PORT`.
+Skrypt wysyła `HEAD` przez `git archive`, buduje obraz na serwerze i uruchamia kontener z `--restart unless-stopped` i limitem 300 MB RAM. Przy pierwszym wdrożeniu generuje klucz API w `~/wcag22-mcp/.env`. HTTPS zapewnia Mikrus bez konfiguracji: aplikacja na porcie `20000+ID` jest dostępna pod adresem `https://SERWER-PORT.mikrus.cloud` (np. `https://robert152-20152.mikrus.cloud/mcp`; kontener musi słuchać na tym porcie na `0.0.0.0` i `[::]`). Własną subdomenę (np. `wcag.bieda.it`) można przypiąć do `MIKRUS_APP_PORT` w panelu mikr.us.
 
 ### Cloudflare Tunnel
 
