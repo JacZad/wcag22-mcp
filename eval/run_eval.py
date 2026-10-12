@@ -41,6 +41,19 @@ def sys_fts5(q):
     return uniq(m for m in SC_RE.findall(s.search(q)) if m in s.SCS)
 
 
+def sys_search_sc(q):
+    """Kryteria z sekcji „Kryteria sukcesu" w wyjściu search(), w kolejności wyświetlenia."""
+    ids, in_sc = [], False
+    for line in s.search(q).splitlines():
+        if line.startswith("## "):
+            in_sc = line.startswith("## Kryteria")
+        elif in_sc:
+            m = re.match(r"\S+ \*\*(\d\.\d+\.\d+)\*\*", line)
+            if m:
+                ids.append(m.group(1))
+    return uniq(ids)
+
+
 def sys_get(q):
     """Lookup JSON: _resolve() to to samo, co robi get() dla ID/sluga/tytułu."""
     sc = s._resolve(q)

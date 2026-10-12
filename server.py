@@ -1326,6 +1326,38 @@ _SEARCH_HEADINGS = {
 }
 
 
+_TECH_BOOST_TOP = 5     # tyle pierwszych technik z wyników dokłada kryteria
+_TECH_BOOST_WEIGHT = 1.0
+
+
+def _boost_with_techniques(sc_rows, tech_rows):
+    """
+    Uszereguj kryteria z wyników FTS5, uwzględniając techniki, które FTS5
+    znalazł w tym samym zapytaniu: techniki wskazują (applies_to w grafie)
+    kryteria, które opis problemu zwykle opisuje inaczej niż ich nazwa.
+    Kryteria znalezione tylko przez technikę są dodawane do listy.
+
+    Waga techniki 1,0 i top-5 technik dobrane na obserwacjach (eval/, podział
+    dev/holdout): hit@3 80% → 86–88%, recall@5 80% → 88%.
+    """
+    score = {row[1]: 1.0 / (i + 1) for i, row in enumerate(sc_rows)}
+    rows = {row[1]: row for row in sc_rows}
+    for j, trow in enumerate(tech_rows[:_TECH_BOOST_TOP]):
+        tid = trow[1]
+        node = "T:" + tid
+        if node not in GRAPH:
+            continue
+        scs = [n[3:] for n in GRAPH.successors(node) if n.startswith("SC:")]
+        for sc_id in dict.fromkeys(scs):
+            score[sc_id] = score.get(sc_id, 0.0) + (
+                _TECH_BOOST_WEIGHT / (j + 1) / len(scs) ** 0.5)
+            if sc_id not in rows:
+                sc = SCS[sc_id]
+                rows[sc_id] = ("sc", sc_id, sc.get("title", ""), SC_PL.get(sc_id, ""),
+                               sc.get("level", ""), "", f"(przez technikę {tid})", 0)
+    return [rows[k] for k in sorted(score, key=lambda k: -score[k])]
+
+
 def _fts_query(raw):
     """Zamień zapytanie użytkownika na bezpieczne wyrażenie FTS5 (prefiksowe OR)."""
     words = [w for w in _FTS_STRIP.sub(" ", raw).split() if len(w) > 1]
@@ -1417,6 +1449,9 @@ def search(query: str) -> str:
         bucket = buckets.get(row[0])
         if bucket is not None and len(bucket) < _SEARCH_LIMITS[row[0]]:
             bucket.append(row)
+
+    if GRAPH is not None and buckets["technique"]:
+        buckets["sc"] = _boost_with_techniques(buckets["sc"], buckets["technique"])[:_SEARCH_LIMITS["sc"]]
 
     total = sum(len(b) for b in buckets.values())
     elapsed_ms = (time.time() - started_at) * 1000
