@@ -1196,9 +1196,12 @@ def get_pattern(name: str = "") -> str:
 
     Returns native HTML alternatives, required ARIA attributes,
     keyboard interactions, and related SCs.
-    Call without a name to list all available patterns.
+    Call without arguments to list all available patterns.
 
-    Examples: get_pattern(), get_pattern("combobox"), get_pattern("dialog")
+    The only parameter is `name` (the pattern name, case-insensitive,
+    e.g. "tree", "combobox", "dialog"); there is no `pattern` or `pattern_id`.
+
+    Examples: get_pattern(), get_pattern(name="combobox"), get_pattern(name="tree")
     """
     if not name.strip():
         return _list_patterns()
