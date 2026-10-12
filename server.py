@@ -778,6 +778,16 @@ def _snippet(text, query, max_len=150):
 
 mcp = FastMCP(
     "WCAG 2.2 MCP Server",
+    # Klient dołącza to do kontekstu modelu. Indeks i opisy są angielskie,
+    # a polskie są tylko tytuły kryteriów, więc zapytania mają iść po angielsku.
+    instructions=(
+        "Always send tool arguments in English. If the user writes in another "
+        "language (e.g. Polish), translate the question into English keywords "
+        "first, e.g. 'tekst alternatywny dla obrazków' -> search('alt text images'). "
+        "Reply to the user in their own language. Success criteria can be given "
+        "by ID (1.4.3), slug or title; use search() to find a criterion from a "
+        "description."
+    ),
     json_response=True,
     # Bez tego FastMCP trzyma sesję w pamięci instancji. Na Cloud Run przy
     # kilku instancjach i bez session affinity kolejne żądanie tego samego

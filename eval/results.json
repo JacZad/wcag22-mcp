@@ -1,0 +1,3573 @@
+{
+ "A": {
+  "get (JSON)": [
+   {
+    "q": "text contrast ratio",
+    "style": "kw",
+    "expected": [
+     "1.4.3",
+     "1.4.6"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "my body text has too little contrast against the background",
+    "style": "nl",
+    "expected": [
+     "1.4.3",
+     "1.4.6"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "kontrast tekstu",
+    "style": "pl",
+    "expected": [
+     "1.4.3",
+     "1.4.6"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "contrast of buttons and form field borders",
+    "style": "nl",
+    "expected": [
+     "1.4.11"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "non-text contrast",
+    "style": "kw",
+    "expected": [
+     "1.4.11"
+    ],
+    "ranking": [
+     "1.4.11"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "alt text for images",
+    "style": "kw",
+    "expected": [
+     "1.1.1"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "tekst alternatywny dla obrazków",
+    "style": "pl",
+    "expected": [
+     "1.1.1"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "site cannot be used with keyboard only",
+    "style": "nl",
+    "expected": [
+     "2.1.1"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "keyboard trap",
+    "style": "kw",
+    "expected": [
+     "2.1.2"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "focus indicator not visible",
+    "style": "nl",
+    "expected": [
+     "2.4.7",
+     "2.4.11",
+     "2.4.13"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "focus appearance",
+    "style": "kw",
+    "expected": [
+     "2.4.13",
+     "2.4.7",
+     "2.4.11"
+    ],
+    "ranking": [
+     "2.4.13"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "sticky header covers the focused element",
+    "style": "nl",
+    "expected": [
+     "2.4.11",
+     "2.4.12"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "skip link bypass blocks",
+    "style": "kw",
+    "expected": [
+     "2.4.1"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "page title",
+    "style": "kw",
+    "expected": [
+     "2.4.2"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "tab order does not follow the visual order",
+    "style": "nl",
+    "expected": [
+     "2.4.3",
+     "1.3.2"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "link text click here",
+    "style": "nl",
+    "expected": [
+     "2.4.4",
+     "2.4.9"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "form fields need visible labels",
+    "style": "nl",
+    "expected": [
+     "3.3.2",
+     "1.3.1"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "etykiety pól formularza",
+    "style": "pl",
+    "expected": [
+     "3.3.2",
+     "1.3.1"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "error message identifies the field in error",
+    "style": "nl",
+    "expected": [
+     "3.3.1"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "komunikat o błędzie w formularzu",
+    "style": "pl",
+    "expected": [
+     "3.3.1",
+     "3.3.3"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "autocomplete personal data",
+    "style": "kw",
+    "expected": [
+     "1.3.5"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "text resize 200 percent",
+    "style": "kw",
+    "expected": [
+     "1.4.4"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "page must not scroll horizontally at 320 px width",
+    "style": "nl",
+    "expected": [
+     "1.4.10"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "reflow",
+    "style": "kw",
+    "expected": [
+     "1.4.10"
+    ],
+    "ranking": [
+     "1.4.10"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "text spacing line height letter spacing",
+    "style": "kw",
+    "expected": [
+     "1.4.12"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "captions for video",
+    "style": "kw",
+    "expected": [
+     "1.2.2",
+     "1.2.4"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "audio description for video",
+    "style": "kw",
+    "expected": [
+     "1.2.5",
+     "1.2.3"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "flashing content seizures",
+    "style": "kw",
+    "expected": [
+     "2.3.1",
+     "2.3.2"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "carousel that moves automatically needs a pause button",
+    "style": "nl",
+    "expected": [
+     "2.2.2"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "session timeout warns user",
+    "style": "nl",
+    "expected": [
+     "2.2.1",
+     "2.2.6"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "touch targets too small",
+    "style": "nl",
+    "expected": [
+     "2.5.8",
+     "2.5.5"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "przeciaganie elementow bez diakrytykow",
+    "style": "pl",
+    "expected": [
+     "2.5.7"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "dragging movements need a single pointer alternative",
+    "style": "nl",
+    "expected": [
+     "2.5.7"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "page language attribute",
+    "style": "kw",
+    "expected": [
+     "3.1.1"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "screen reader announces status messages without moving focus",
+    "style": "nl",
+    "expected": [
+     "4.1.3"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "custom widget name role value ARIA",
+    "style": "nl",
+    "expected": [
+     "4.1.2"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "login without cognitive function test CAPTCHA",
+    "style": "nl",
+    "expected": [
+     "3.3.8",
+     "3.3.9"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "do not ask the user to enter the same information twice",
+    "style": "nl",
+    "expected": [
+     "3.3.7"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "help mechanism in a consistent place",
+    "style": "nl",
+    "expected": [
+     "3.2.6"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "consistent navigation",
+    "style": "kw",
+    "expected": [
+     "3.2.3"
+    ],
+    "ranking": [
+     "3.2.3"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "information conveyed by color alone",
+    "style": "nl",
+    "expected": [
+     "1.4.1"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "heading structure",
+    "style": "kw",
+    "expected": [
+     "1.3.1",
+     "2.4.6",
+     "2.4.10"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "content locked to portrait orientation",
+    "style": "nl",
+    "expected": [
+     "1.3.4"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "accidental activation on touch release",
+    "style": "nl",
+    "expected": [
+     "2.5.2"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "tooltip appears on hover and must be dismissible",
+    "style": "nl",
+    "expected": [
+     "1.4.13"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "shake the device to undo",
+    "style": "nl",
+    "expected": [
+     "2.5.4"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "single character keyboard shortcuts",
+    "style": "kw",
+    "expected": [
+     "2.1.4"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "images of text",
+    "style": "kw",
+    "expected": [
+     "1.4.5",
+     "1.4.9"
+    ],
+    "ranking": [
+     "1.4.5"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "audio that plays automatically",
+    "style": "nl",
+    "expected": [
+     "1.4.2"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "context changes unexpectedly when a field receives input",
+    "style": "nl",
+    "expected": [
+     "3.2.2",
+     "3.2.1"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "tabela z nagłówkami kolumn",
+    "style": "pl",
+    "expected": [
+     "1.3.1"
+    ],
+    "ranking": [],
+    "rank": null
+   }
+  ],
+  "search (FTS5)": [
+   {
+    "q": "text contrast ratio",
+    "style": "kw",
+    "expected": [
+     "1.4.3",
+     "1.4.6"
+    ],
+    "ranking": [
+     "1.4.3",
+     "1.4.6",
+     "1.4.11",
+     "2.4.13",
+     "2.4.7"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "my body text has too little contrast against the background",
+    "style": "nl",
+    "expected": [
+     "1.4.3",
+     "1.4.6"
+    ],
+    "ranking": [
+     "1.4.1",
+     "2.4.7",
+     "1.4.6",
+     "1.4.3",
+     "2.4.13"
+    ],
+    "rank": 3
+   },
+   {
+    "q": "kontrast tekstu",
+    "style": "pl",
+    "expected": [
+     "1.4.3",
+     "1.4.6"
+    ],
+    "ranking": [
+     "1.4.6",
+     "1.4.11",
+     "1.4.3",
+     "1.4.4",
+     "1.4.9"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "contrast of buttons and form field borders",
+    "style": "nl",
+    "expected": [
+     "1.4.11"
+    ],
+    "ranking": [
+     "1.4.11",
+     "1.4.1",
+     "2.4.7",
+     "2.4.13",
+     "1.4.3"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "non-text contrast",
+    "style": "kw",
+    "expected": [
+     "1.4.11"
+    ],
+    "ranking": [
+     "1.4.11",
+     "2.4.7",
+     "1.4.6",
+     "1.4.3",
+     "1.1.1"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "alt text for images",
+    "style": "kw",
+    "expected": [
+     "1.1.1"
+    ],
+    "ranking": [
+     "1.1.1",
+     "1.4.9",
+     "1.4.5",
+     "3.3.9",
+     "3.3.8"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "tekst alternatywny dla obrazków",
+    "style": "pl",
+    "expected": [
+     "1.1.1"
+    ],
+    "ranking": [
+     "1.2.3",
+     "1.2.8",
+     "1.4.4",
+     "1.4.9",
+     "1.4.5"
+    ],
+    "rank": null
+   },
+   {
+    "q": "site cannot be used with keyboard only",
+    "style": "nl",
+    "expected": [
+     "2.1.1"
+    ],
+    "ranking": [
+     "2.1.3",
+     "2.5.6",
+     "2.1.1",
+     "3.1.4",
+     "2.4.7"
+    ],
+    "rank": 3
+   },
+   {
+    "q": "keyboard trap",
+    "style": "kw",
+    "expected": [
+     "2.1.2"
+    ],
+    "ranking": [
+     "2.1.2",
+     "2.1.3",
+     "2.1.1",
+     "2.4.7",
+     "2.5.6"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "focus indicator not visible",
+    "style": "nl",
+    "expected": [
+     "2.4.7",
+     "2.4.11",
+     "2.4.13"
+    ],
+    "ranking": [
+     "2.4.7",
+     "2.4.13",
+     "2.4.11",
+     "2.4.12",
+     "1.4.13"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "focus appearance",
+    "style": "kw",
+    "expected": [
+     "2.4.13",
+     "2.4.7",
+     "2.4.11"
+    ],
+    "ranking": [
+     "2.4.13",
+     "1.4.13",
+     "4.1.3",
+     "2.4.12",
+     "2.4.7"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "sticky header covers the focused element",
+    "style": "nl",
+    "expected": [
+     "2.4.11",
+     "2.4.12"
+    ],
+    "ranking": [
+     "2.4.12",
+     "2.4.11",
+     "2.4.1",
+     "2.3.3",
+     "2.2.2"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "skip link bypass blocks",
+    "style": "kw",
+    "expected": [
+     "2.4.1"
+    ],
+    "ranking": [
+     "2.4.1",
+     "3.2.3",
+     "2.5.5",
+     "1.4.13",
+     "1.4.8"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "page title",
+    "style": "kw",
+    "expected": [
+     "2.4.2"
+    ],
+    "ranking": [
+     "2.4.2",
+     "3.1.5",
+     "3.1.4",
+     "2.4.10",
+     "1.4.13"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "tab order does not follow the visual order",
+    "style": "nl",
+    "expected": [
+     "2.4.3",
+     "1.3.2"
+    ],
+    "ranking": [
+     "2.4.3",
+     "1.3.2",
+     "3.2.6",
+     "2.4.4",
+     "3.2.3"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "link text click here",
+    "style": "nl",
+    "expected": [
+     "2.4.4",
+     "2.4.9"
+    ],
+    "ranking": [
+     "1.3.3",
+     "3.2.4",
+     "2.5.3",
+     "2.5.1",
+     "2.4.1"
+    ],
+    "rank": null
+   },
+   {
+    "q": "form fields need visible labels",
+    "style": "nl",
+    "expected": [
+     "3.3.2",
+     "1.3.1"
+    ],
+    "ranking": [
+     "3.3.2",
+     "2.5.3",
+     "2.4.7",
+     "4.1.2",
+     "1.3.1"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "etykiety pól formularza",
+    "style": "pl",
+    "expected": [
+     "3.3.2",
+     "1.3.1"
+    ],
+    "ranking": [
+     "3.3.2",
+     "2.4.6",
+     "3.1.1",
+     "1.2.6",
+     "4.1.3"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "error message identifies the field in error",
+    "style": "nl",
+    "expected": [
+     "3.3.1"
+    ],
+    "ranking": [
+     "3.3.1",
+     "3.3.3",
+     "4.1.3",
+     "3.3.6",
+     "3.3.4"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "komunikat o błędzie w formularzu",
+    "style": "pl",
+    "expected": [
+     "3.3.1",
+     "3.3.3"
+    ],
+    "ranking": [
+     "4.1.3",
+     "3.3.5"
+    ],
+    "rank": null
+   },
+   {
+    "q": "autocomplete personal data",
+    "style": "kw",
+    "expected": [
+     "1.3.5"
+    ],
+    "ranking": [
+     "1.3.5",
+     "3.3.8",
+     "1.3.6",
+     "1.1.1",
+     "3.3.4"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "text resize 200 percent",
+    "style": "kw",
+    "expected": [
+     "1.4.4"
+    ],
+    "ranking": [
+     "1.4.4",
+     "1.4.8",
+     "2.4.1",
+     "2.1.1",
+     "1.4.9"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "page must not scroll horizontally at 320 px width",
+    "style": "nl",
+    "expected": [
+     "1.4.10"
+    ],
+    "ranking": [
+     "1.4.10",
+     "1.4.8",
+     "2.4.13",
+     "2.5.8",
+     "2.3.1"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "reflow",
+    "style": "kw",
+    "expected": [
+     "1.4.10"
+    ],
+    "ranking": [
+     "1.4.10",
+     "1.3.2",
+     "1.4.5",
+     "2.5.8"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "text spacing line height letter spacing",
+    "style": "kw",
+    "expected": [
+     "1.4.12"
+    ],
+    "ranking": [
+     "1.4.12",
+     "2.5.8",
+     "1.4.8",
+     "2.4.10",
+     "1.4.5"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "captions for video",
+    "style": "kw",
+    "expected": [
+     "1.2.2",
+     "1.2.4"
+    ],
+    "ranking": [
+     "1.2.4",
+     "1.2.2",
+     "1.2.1",
+     "1.2.6",
+     "1.2.8"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "audio description for video",
+    "style": "kw",
+    "expected": [
+     "1.2.5",
+     "1.2.3"
+    ],
+    "ranking": [
+     "1.2.1",
+     "1.2.7",
+     "1.2.3",
+     "1.2.5",
+     "1.2.8"
+    ],
+    "rank": 3
+   },
+   {
+    "q": "flashing content seizures",
+    "style": "kw",
+    "expected": [
+     "2.3.1",
+     "2.3.2"
+    ],
+    "ranking": [
+     "2.3.2",
+     "2.3.1",
+     "2.2.2",
+     "1.4.13",
+     "1.1.1"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "carousel that moves automatically needs a pause button",
+    "style": "nl",
+    "expected": [
+     "2.2.2"
+    ],
+    "ranking": [
+     "2.2.2",
+     "2.5.7",
+     "3.2.2",
+     "1.4.2",
+     "1.4.10"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "session timeout warns user",
+    "style": "nl",
+    "expected": [
+     "2.2.1",
+     "2.2.6"
+    ],
+    "ranking": [
+     "2.2.5",
+     "2.2.6",
+     "2.2.1",
+     "2.2.3",
+     "2.2.4"
+    ],
+    "rank": 2
+   },
+   {
+    "q": "touch targets too small",
+    "style": "nl",
+    "expected": [
+     "2.5.8",
+     "2.5.5"
+    ],
+    "ranking": [
+     "2.5.5",
+     "2.5.8",
+     "2.5.2",
+     "2.5.6",
+     "1.4.10"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "przeciaganie elementow bez diakrytykow",
+    "style": "pl",
+    "expected": [
+     "2.5.7"
+    ],
+    "ranking": [
+     "2.5.7",
+     "1.4.11",
+     "2.1.3",
+     "2.2.3",
+     "1.4.9"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "dragging movements need a single pointer alternative",
+    "style": "nl",
+    "expected": [
+     "2.5.7"
+    ],
+    "ranking": [
+     "2.5.7",
+     "2.5.1",
+     "2.5.2",
+     "2.1.3",
+     "2.1.1"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "page language attribute",
+    "style": "kw",
+    "expected": [
+     "3.1.1"
+    ],
+    "ranking": [
+     "3.1.1",
+     "1.3.5",
+     "1.1.1"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "screen reader announces status messages without moving focus",
+    "style": "nl",
+    "expected": [
+     "4.1.3"
+    ],
+    "ranking": [
+     "4.1.3",
+     "3.3.1",
+     "1.4.13",
+     "2.1.2",
+     "3.2.1"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "custom widget name role value ARIA",
+    "style": "nl",
+    "expected": [
+     "4.1.2"
+    ],
+    "ranking": [
+     "4.1.2",
+     "1.1.1",
+     "2.4.10",
+     "3.3.1",
+     "1.4.5"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "login without cognitive function test CAPTCHA",
+    "style": "nl",
+    "expected": [
+     "3.3.8",
+     "3.3.9"
+    ],
+    "ranking": [
+     "3.3.9",
+     "3.3.8",
+     "2.2.5",
+     "3.3.3",
+     "1.1.1"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "do not ask the user to enter the same information twice",
+    "style": "nl",
+    "expected": [
+     "3.3.7"
+    ],
+    "ranking": [
+     "3.3.7",
+     "3.3.9",
+     "1.1.1",
+     "3.2.6",
+     "2.1.1"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "help mechanism in a consistent place",
+    "style": "nl",
+    "expected": [
+     "3.2.6"
+    ],
+    "ranking": [
+     "3.2.6",
+     "3.2.3",
+     "3.2.4",
+     "3.3.8",
+     "2.4.1"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "consistent navigation",
+    "style": "kw",
+    "expected": [
+     "3.2.3"
+    ],
+    "ranking": [
+     "3.2.3",
+     "2.4.3",
+     "3.2.4",
+     "3.2.6",
+     "2.4.5"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "information conveyed by color alone",
+    "style": "nl",
+    "expected": [
+     "1.4.1"
+    ],
+    "ranking": [
+     "1.4.1",
+     "1.4.9",
+     "1.2.4",
+     "2.5.8",
+     "1.4.11"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "heading structure",
+    "style": "kw",
+    "expected": [
+     "1.3.1",
+     "2.4.6",
+     "2.4.10"
+    ],
+    "ranking": [
+     "1.3.1",
+     "2.4.10",
+     "2.4.1",
+     "2.4.8",
+     "2.4.6"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "content locked to portrait orientation",
+    "style": "nl",
+    "expected": [
+     "1.3.4"
+    ],
+    "ranking": [
+     "1.3.4",
+     "1.3.3",
+     "3.2.6",
+     "2.5.6",
+     "2.1.1"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "accidental activation on touch release",
+    "style": "nl",
+    "expected": [
+     "2.5.2"
+    ],
+    "ranking": [
+     "2.5.2",
+     "2.5.4",
+     "2.5.7",
+     "2.5.8",
+     "2.1.4"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "tooltip appears on hover and must be dismissible",
+    "style": "nl",
+    "expected": [
+     "1.4.13"
+    ],
+    "ranking": [
+     "1.4.13",
+     "2.4.12",
+     "1.4.11",
+     "2.4.11",
+     "1.4.4"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "shake the device to undo",
+    "style": "nl",
+    "expected": [
+     "2.5.4"
+    ],
+    "ranking": [
+     "2.5.4",
+     "2.5.2",
+     "2.5.5",
+     "3.3.4",
+     "1.3.4"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "single character keyboard shortcuts",
+    "style": "kw",
+    "expected": [
+     "2.1.4"
+    ],
+    "ranking": [
+     "2.1.4",
+     "2.5.7",
+     "3.1.2",
+     "2.5.1",
+     "2.5.2"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "images of text",
+    "style": "kw",
+    "expected": [
+     "1.4.5",
+     "1.4.9"
+    ],
+    "ranking": [
+     "1.4.5",
+     "1.4.9",
+     "1.1.1",
+     "1.4.3",
+     "3.3.9"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "audio that plays automatically",
+    "style": "nl",
+    "expected": [
+     "1.4.2"
+    ],
+    "ranking": [
+     "1.4.2",
+     "1.2.9",
+     "1.2.7",
+     "1.2.4",
+     "1.2.2"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "context changes unexpectedly when a field receives input",
+    "style": "nl",
+    "expected": [
+     "3.2.2",
+     "3.2.1"
+    ],
+    "ranking": [
+     "3.2.2",
+     "3.2.1",
+     "4.1.3",
+     "3.3.5",
+     "2.4.12"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "tabela z nagłówkami kolumn",
+    "style": "pl",
+    "expected": [
+     "1.3.1"
+    ],
+    "ranking": [],
+    "rank": null
+   }
+  ],
+  "graf (encje)": [
+   {
+    "q": "text contrast ratio",
+    "style": "kw",
+    "expected": [
+     "1.4.3",
+     "1.4.6"
+    ],
+    "ranking": [
+     "1.4.1",
+     "1.4.11",
+     "1.4.3",
+     "1.4.6",
+     "2.4.13"
+    ],
+    "rank": 3
+   },
+   {
+    "q": "my body text has too little contrast against the background",
+    "style": "nl",
+    "expected": [
+     "1.4.3",
+     "1.4.6"
+    ],
+    "ranking": [
+     "1.1.1",
+     "1.2.1",
+     "1.2.2",
+     "1.2.3",
+     "1.2.4"
+    ],
+    "rank": 21
+   },
+   {
+    "q": "kontrast tekstu",
+    "style": "pl",
+    "expected": [
+     "1.4.3",
+     "1.4.6"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "contrast of buttons and form field borders",
+    "style": "nl",
+    "expected": [
+     "1.4.11"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "non-text contrast",
+    "style": "kw",
+    "expected": [
+     "1.4.11"
+    ],
+    "ranking": [
+     "1.1.1",
+     "1.2.1",
+     "1.2.2",
+     "1.2.3",
+     "1.2.4"
+    ],
+    "rank": 17
+   },
+   {
+    "q": "alt text for images",
+    "style": "kw",
+    "expected": [
+     "1.1.1"
+    ],
+    "ranking": [
+     "1.1.1",
+     "1.2.1",
+     "1.2.2",
+     "1.2.3",
+     "1.2.4"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "tekst alternatywny dla obrazków",
+    "style": "pl",
+    "expected": [
+     "1.1.1"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "site cannot be used with keyboard only",
+    "style": "nl",
+    "expected": [
+     "2.1.1"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "keyboard trap",
+    "style": "kw",
+    "expected": [
+     "2.1.2"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "focus indicator not visible",
+    "style": "nl",
+    "expected": [
+     "2.4.7",
+     "2.4.11",
+     "2.4.13"
+    ],
+    "ranking": [
+     "1.4.11",
+     "1.4.13",
+     "2.4.11",
+     "2.4.12",
+     "2.4.13"
+    ],
+    "rank": 3
+   },
+   {
+    "q": "focus appearance",
+    "style": "kw",
+    "expected": [
+     "2.4.13",
+     "2.4.7",
+     "2.4.11"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "sticky header covers the focused element",
+    "style": "nl",
+    "expected": [
+     "2.4.11",
+     "2.4.12"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "skip link bypass blocks",
+    "style": "kw",
+    "expected": [
+     "2.4.1"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "page title",
+    "style": "kw",
+    "expected": [
+     "2.4.2"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "tab order does not follow the visual order",
+    "style": "nl",
+    "expected": [
+     "2.4.3",
+     "1.3.2"
+    ],
+    "ranking": [
+     "1.3.1",
+     "1.3.2",
+     "1.4.11",
+     "2.1.1",
+     "2.1.2"
+    ],
+    "rank": 2
+   },
+   {
+    "q": "link text click here",
+    "style": "nl",
+    "expected": [
+     "2.4.4",
+     "2.4.9"
+    ],
+    "ranking": [
+     "1.1.1",
+     "1.2.1",
+     "1.2.2",
+     "1.2.3",
+     "1.2.4"
+    ],
+    "rank": 42
+   },
+   {
+    "q": "form fields need visible labels",
+    "style": "nl",
+    "expected": [
+     "3.3.2",
+     "1.3.1"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "etykiety pól formularza",
+    "style": "pl",
+    "expected": [
+     "3.3.2",
+     "1.3.1"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "error message identifies the field in error",
+    "style": "nl",
+    "expected": [
+     "3.3.1"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "komunikat o błędzie w formularzu",
+    "style": "pl",
+    "expected": [
+     "3.3.1",
+     "3.3.3"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "autocomplete personal data",
+    "style": "kw",
+    "expected": [
+     "1.3.5"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "text resize 200 percent",
+    "style": "kw",
+    "expected": [
+     "1.4.4"
+    ],
+    "ranking": [
+     "1.1.1",
+     "1.2.1",
+     "1.2.2",
+     "1.2.3",
+     "1.2.4"
+    ],
+    "rank": 22
+   },
+   {
+    "q": "page must not scroll horizontally at 320 px width",
+    "style": "nl",
+    "expected": [
+     "1.4.10"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "reflow",
+    "style": "kw",
+    "expected": [
+     "1.4.10"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "text spacing line height letter spacing",
+    "style": "kw",
+    "expected": [
+     "1.4.12"
+    ],
+    "ranking": [
+     "1.1.1",
+     "1.2.1",
+     "1.2.2",
+     "1.2.3",
+     "1.2.4"
+    ],
+    "rank": 18
+   },
+   {
+    "q": "captions for video",
+    "style": "kw",
+    "expected": [
+     "1.2.2",
+     "1.2.4"
+    ],
+    "ranking": [
+     "1.2.2",
+     "1.2.4",
+     "1.2.6",
+     "1.2.8",
+     "1.2.9"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "audio description for video",
+    "style": "kw",
+    "expected": [
+     "1.2.5",
+     "1.2.3"
+    ],
+    "ranking": [
+     "1.2.3",
+     "1.2.5",
+     "1.2.6",
+     "1.2.7",
+     "1.2.8"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "flashing content seizures",
+    "style": "kw",
+    "expected": [
+     "2.3.1",
+     "2.3.2"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "carousel that moves automatically needs a pause button",
+    "style": "nl",
+    "expected": [
+     "2.2.2"
+    ],
+    "ranking": [
+     "1.3.1",
+     "1.3.2",
+     "2.1.1",
+     "2.1.2",
+     "2.4.11"
+    ],
+    "rank": 19
+   },
+   {
+    "q": "session timeout warns user",
+    "style": "nl",
+    "expected": [
+     "2.2.1",
+     "2.2.6"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "touch targets too small",
+    "style": "nl",
+    "expected": [
+     "2.5.8",
+     "2.5.5"
+    ],
+    "ranking": [
+     "2.4.13",
+     "2.4.7",
+     "2.5.2",
+     "2.5.5",
+     "2.5.8"
+    ],
+    "rank": 4
+   },
+   {
+    "q": "przeciaganie elementow bez diakrytykow",
+    "style": "pl",
+    "expected": [
+     "2.5.7"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "dragging movements need a single pointer alternative",
+    "style": "nl",
+    "expected": [
+     "2.5.7"
+    ],
+    "ranking": [
+     "2.5.1",
+     "2.5.2",
+     "2.5.7"
+    ],
+    "rank": 3
+   },
+   {
+    "q": "page language attribute",
+    "style": "kw",
+    "expected": [
+     "3.1.1"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "screen reader announces status messages without moving focus",
+    "style": "nl",
+    "expected": [
+     "4.1.3"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "custom widget name role value ARIA",
+    "style": "nl",
+    "expected": [
+     "4.1.2"
+    ],
+    "ranking": [
+     "1.1.1",
+     "1.3.6",
+     "1.4.1",
+     "2.4.10",
+     "2.4.6"
+    ],
+    "rank": 12
+   },
+   {
+    "q": "login without cognitive function test CAPTCHA",
+    "style": "nl",
+    "expected": [
+     "3.3.8",
+     "3.3.9"
+    ],
+    "ranking": [
+     "3.3.8",
+     "3.3.9",
+     "1.1.1",
+     "1.4.7",
+     "1.4.1"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "do not ask the user to enter the same information twice",
+    "style": "nl",
+    "expected": [
+     "3.3.7"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "help mechanism in a consistent place",
+    "style": "nl",
+    "expected": [
+     "3.2.6"
+    ],
+    "ranking": [
+     "1.1.1",
+     "1.4.10",
+     "1.4.12",
+     "1.4.13",
+     "1.4.2"
+    ],
+    "rank": 31
+   },
+   {
+    "q": "consistent navigation",
+    "style": "kw",
+    "expected": [
+     "3.2.3"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "information conveyed by color alone",
+    "style": "nl",
+    "expected": [
+     "1.4.1"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "heading structure",
+    "style": "kw",
+    "expected": [
+     "1.3.1",
+     "2.4.6",
+     "2.4.10"
+    ],
+    "ranking": [
+     "1.1.1",
+     "1.3.1",
+     "1.3.3",
+     "2.4.1",
+     "2.4.10"
+    ],
+    "rank": 2
+   },
+   {
+    "q": "content locked to portrait orientation",
+    "style": "nl",
+    "expected": [
+     "1.3.4"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "accidental activation on touch release",
+    "style": "nl",
+    "expected": [
+     "2.5.2"
+    ],
+    "ranking": [
+     "2.4.13",
+     "2.4.7",
+     "2.5.2",
+     "2.5.5",
+     "2.5.8"
+    ],
+    "rank": 3
+   },
+   {
+    "q": "tooltip appears on hover and must be dismissible",
+    "style": "nl",
+    "expected": [
+     "1.4.13"
+    ],
+    "ranking": [
+     "1.3.1",
+     "1.3.2",
+     "2.4.6",
+     "2.5.3",
+     "2.5.8"
+    ],
+    "rank": null
+   },
+   {
+    "q": "shake the device to undo",
+    "style": "nl",
+    "expected": [
+     "2.5.4"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "single character keyboard shortcuts",
+    "style": "kw",
+    "expected": [
+     "2.1.4"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "images of text",
+    "style": "kw",
+    "expected": [
+     "1.4.5",
+     "1.4.9"
+    ],
+    "ranking": [
+     "1.1.1",
+     "1.2.1",
+     "1.2.2",
+     "1.2.3",
+     "1.2.4"
+    ],
+    "rank": 23
+   },
+   {
+    "q": "audio that plays automatically",
+    "style": "nl",
+    "expected": [
+     "1.4.2"
+    ],
+    "ranking": [
+     "1.1.1",
+     "1.2.1",
+     "1.2.2",
+     "1.2.3",
+     "1.2.4"
+    ],
+    "rank": 11
+   },
+   {
+    "q": "context changes unexpectedly when a field receives input",
+    "style": "nl",
+    "expected": [
+     "3.2.2",
+     "3.2.1"
+    ],
+    "ranking": [],
+    "rank": null
+   },
+   {
+    "q": "tabela z nagłówkami kolumn",
+    "style": "pl",
+    "expected": [
+     "1.3.1"
+    ],
+    "ranking": [],
+    "rank": null
+   }
+  ],
+  "FTS5+graf (RRF)": [
+   {
+    "q": "text contrast ratio",
+    "style": "kw",
+    "expected": [
+     "1.4.3",
+     "1.4.6"
+    ],
+    "ranking": [
+     "1.4.3",
+     "1.4.11",
+     "1.4.6",
+     "1.4.1",
+     "2.4.13"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "my body text has too little contrast against the background",
+    "style": "nl",
+    "expected": [
+     "1.4.3",
+     "1.4.6"
+    ],
+    "ranking": [
+     "1.2.6",
+     "1.4.1",
+     "1.4.11",
+     "1.4.3",
+     "1.4.6"
+    ],
+    "rank": 4
+   },
+   {
+    "q": "kontrast tekstu",
+    "style": "pl",
+    "expected": [
+     "1.4.3",
+     "1.4.6"
+    ],
+    "ranking": [
+     "1.4.6",
+     "1.4.11",
+     "1.4.3",
+     "1.4.4",
+     "1.4.9"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "contrast of buttons and form field borders",
+    "style": "nl",
+    "expected": [
+     "1.4.11"
+    ],
+    "ranking": [
+     "1.4.11",
+     "1.4.1",
+     "2.4.7",
+     "2.4.13",
+     "1.4.3"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "non-text contrast",
+    "style": "kw",
+    "expected": [
+     "1.4.11"
+    ],
+    "ranking": [
+     "1.1.1",
+     "1.4.11",
+     "1.4.1",
+     "1.4.3",
+     "1.4.6"
+    ],
+    "rank": 2
+   },
+   {
+    "q": "alt text for images",
+    "style": "kw",
+    "expected": [
+     "1.1.1"
+    ],
+    "ranking": [
+     "1.1.1",
+     "1.2.1",
+     "1.2.2",
+     "1.4.5",
+     "1.4.9"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "tekst alternatywny dla obrazków",
+    "style": "pl",
+    "expected": [
+     "1.1.1"
+    ],
+    "ranking": [
+     "1.2.3",
+     "1.2.8",
+     "1.4.4",
+     "1.4.9",
+     "1.4.5"
+    ],
+    "rank": null
+   },
+   {
+    "q": "site cannot be used with keyboard only",
+    "style": "nl",
+    "expected": [
+     "2.1.1"
+    ],
+    "ranking": [
+     "2.1.3",
+     "2.5.6",
+     "2.1.1",
+     "3.1.4",
+     "2.4.7"
+    ],
+    "rank": 3
+   },
+   {
+    "q": "keyboard trap",
+    "style": "kw",
+    "expected": [
+     "2.1.2"
+    ],
+    "ranking": [
+     "2.1.2",
+     "2.1.3",
+     "2.1.1",
+     "2.4.7",
+     "2.5.6"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "focus indicator not visible",
+    "style": "nl",
+    "expected": [
+     "2.4.7",
+     "2.4.11",
+     "2.4.13"
+    ],
+    "ranking": [
+     "2.4.11",
+     "2.4.7",
+     "1.4.13",
+     "2.4.13",
+     "1.4.11"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "focus appearance",
+    "style": "kw",
+    "expected": [
+     "2.4.13",
+     "2.4.7",
+     "2.4.11"
+    ],
+    "ranking": [
+     "2.4.13",
+     "1.4.13",
+     "4.1.3",
+     "2.4.12",
+     "2.4.7"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "sticky header covers the focused element",
+    "style": "nl",
+    "expected": [
+     "2.4.11",
+     "2.4.12"
+    ],
+    "ranking": [
+     "2.4.12",
+     "2.4.11",
+     "2.4.1",
+     "2.3.3",
+     "2.2.2"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "skip link bypass blocks",
+    "style": "kw",
+    "expected": [
+     "2.4.1"
+    ],
+    "ranking": [
+     "2.4.1",
+     "3.2.3",
+     "2.5.5",
+     "1.4.13",
+     "1.4.8"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "page title",
+    "style": "kw",
+    "expected": [
+     "2.4.2"
+    ],
+    "ranking": [
+     "2.4.2",
+     "3.1.5",
+     "3.1.4",
+     "2.4.10",
+     "1.4.13"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "tab order does not follow the visual order",
+    "style": "nl",
+    "expected": [
+     "2.4.3",
+     "1.3.2"
+    ],
+    "ranking": [
+     "1.3.2",
+     "2.4.3",
+     "1.4.11",
+     "1.3.1",
+     "3.2.6"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "link text click here",
+    "style": "nl",
+    "expected": [
+     "2.4.4",
+     "2.4.9"
+    ],
+    "ranking": [
+     "1.4.9",
+     "2.4.1",
+     "2.5.3",
+     "3.2.4",
+     "2.5.7"
+    ],
+    "rank": 50
+   },
+   {
+    "q": "form fields need visible labels",
+    "style": "nl",
+    "expected": [
+     "3.3.2",
+     "1.3.1"
+    ],
+    "ranking": [
+     "3.3.2",
+     "2.5.3",
+     "2.4.7",
+     "4.1.2",
+     "1.3.1"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "etykiety pól formularza",
+    "style": "pl",
+    "expected": [
+     "3.3.2",
+     "1.3.1"
+    ],
+    "ranking": [
+     "3.3.2",
+     "2.4.6",
+     "3.1.1",
+     "1.2.6",
+     "4.1.3"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "error message identifies the field in error",
+    "style": "nl",
+    "expected": [
+     "3.3.1"
+    ],
+    "ranking": [
+     "3.3.1",
+     "3.3.3",
+     "4.1.3",
+     "3.3.6",
+     "3.3.4"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "komunikat o błędzie w formularzu",
+    "style": "pl",
+    "expected": [
+     "3.3.1",
+     "3.3.3"
+    ],
+    "ranking": [
+     "4.1.3",
+     "3.3.5"
+    ],
+    "rank": null
+   },
+   {
+    "q": "autocomplete personal data",
+    "style": "kw",
+    "expected": [
+     "1.3.5"
+    ],
+    "ranking": [
+     "1.3.5",
+     "3.3.8",
+     "1.3.6",
+     "1.1.1",
+     "3.3.4"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "text resize 200 percent",
+    "style": "kw",
+    "expected": [
+     "1.4.4"
+    ],
+    "ranking": [
+     "1.1.1",
+     "1.4.4",
+     "1.4.8",
+     "1.4.12",
+     "1.4.5"
+    ],
+    "rank": 2
+   },
+   {
+    "q": "page must not scroll horizontally at 320 px width",
+    "style": "nl",
+    "expected": [
+     "1.4.10"
+    ],
+    "ranking": [
+     "1.4.10",
+     "1.4.8",
+     "2.4.13",
+     "2.5.8",
+     "2.3.1"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "reflow",
+    "style": "kw",
+    "expected": [
+     "1.4.10"
+    ],
+    "ranking": [
+     "1.4.10",
+     "1.3.2",
+     "1.4.5",
+     "2.5.8"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "text spacing line height letter spacing",
+    "style": "kw",
+    "expected": [
+     "1.4.12"
+    ],
+    "ranking": [
+     "1.4.12",
+     "1.4.10",
+     "1.4.8",
+     "1.4.5",
+     "1.4.9"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "captions for video",
+    "style": "kw",
+    "expected": [
+     "1.2.2",
+     "1.2.4"
+    ],
+    "ranking": [
+     "1.2.2",
+     "1.2.4",
+     "1.2.6",
+     "1.2.8",
+     "1.2.9"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "audio description for video",
+    "style": "kw",
+    "expected": [
+     "1.2.5",
+     "1.2.3"
+    ],
+    "ranking": [
+     "1.2.3",
+     "1.2.5",
+     "1.2.7",
+     "1.2.1",
+     "1.2.6"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "flashing content seizures",
+    "style": "kw",
+    "expected": [
+     "2.3.1",
+     "2.3.2"
+    ],
+    "ranking": [
+     "2.3.2",
+     "2.3.1",
+     "2.2.2",
+     "1.4.13",
+     "1.1.1"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "carousel that moves automatically needs a pause button",
+    "style": "nl",
+    "expected": [
+     "2.2.2"
+    ],
+    "ranking": [
+     "2.1.1",
+     "2.2.2",
+     "1.3.1",
+     "1.3.2",
+     "2.5.7"
+    ],
+    "rank": 2
+   },
+   {
+    "q": "session timeout warns user",
+    "style": "nl",
+    "expected": [
+     "2.2.1",
+     "2.2.6"
+    ],
+    "ranking": [
+     "2.2.5",
+     "2.2.6",
+     "2.2.1",
+     "2.2.3",
+     "2.2.4"
+    ],
+    "rank": 2
+   },
+   {
+    "q": "touch targets too small",
+    "style": "nl",
+    "expected": [
+     "2.5.8",
+     "2.5.5"
+    ],
+    "ranking": [
+     "2.5.5",
+     "2.5.2",
+     "2.5.8",
+     "2.4.13",
+     "2.4.7"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "przeciaganie elementow bez diakrytykow",
+    "style": "pl",
+    "expected": [
+     "2.5.7"
+    ],
+    "ranking": [
+     "2.5.7",
+     "1.4.11",
+     "2.1.3",
+     "2.2.3",
+     "1.4.9"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "dragging movements need a single pointer alternative",
+    "style": "nl",
+    "expected": [
+     "2.5.7"
+    ],
+    "ranking": [
+     "2.5.1",
+     "2.5.7",
+     "2.5.2",
+     "2.1.3",
+     "2.1.1"
+    ],
+    "rank": 2
+   },
+   {
+    "q": "page language attribute",
+    "style": "kw",
+    "expected": [
+     "3.1.1"
+    ],
+    "ranking": [
+     "3.1.1",
+     "1.3.5",
+     "1.1.1"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "screen reader announces status messages without moving focus",
+    "style": "nl",
+    "expected": [
+     "4.1.3"
+    ],
+    "ranking": [
+     "4.1.3",
+     "3.3.1",
+     "1.4.13",
+     "2.1.2",
+     "3.2.1"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "custom widget name role value ARIA",
+    "style": "nl",
+    "expected": [
+     "4.1.2"
+    ],
+    "ranking": [
+     "1.1.1",
+     "2.4.10",
+     "3.3.1",
+     "4.1.2",
+     "3.3.2"
+    ],
+    "rank": 4
+   },
+   {
+    "q": "login without cognitive function test CAPTCHA",
+    "style": "nl",
+    "expected": [
+     "3.3.8",
+     "3.3.9"
+    ],
+    "ranking": [
+     "3.3.8",
+     "3.3.9",
+     "1.1.1",
+     "1.4.7",
+     "2.2.5"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "do not ask the user to enter the same information twice",
+    "style": "nl",
+    "expected": [
+     "3.3.7"
+    ],
+    "ranking": [
+     "3.3.7",
+     "3.3.9",
+     "1.1.1",
+     "3.2.6",
+     "2.1.1"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "help mechanism in a consistent place",
+    "style": "nl",
+    "expected": [
+     "3.2.6"
+    ],
+    "ranking": [
+     "1.4.2",
+     "2.4.1",
+     "2.4.6",
+     "3.2.6",
+     "3.2.3"
+    ],
+    "rank": 4
+   },
+   {
+    "q": "consistent navigation",
+    "style": "kw",
+    "expected": [
+     "3.2.3"
+    ],
+    "ranking": [
+     "3.2.3",
+     "2.4.3",
+     "3.2.4",
+     "3.2.6",
+     "2.4.5"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "information conveyed by color alone",
+    "style": "nl",
+    "expected": [
+     "1.4.1"
+    ],
+    "ranking": [
+     "1.4.1",
+     "1.4.9",
+     "1.2.4",
+     "2.5.8",
+     "1.4.11"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "heading structure",
+    "style": "kw",
+    "expected": [
+     "1.3.1",
+     "2.4.6",
+     "2.4.10"
+    ],
+    "ranking": [
+     "1.3.1",
+     "2.4.10",
+     "2.4.1",
+     "2.4.6",
+     "1.1.1"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "content locked to portrait orientation",
+    "style": "nl",
+    "expected": [
+     "1.3.4"
+    ],
+    "ranking": [
+     "1.3.4",
+     "1.3.3",
+     "3.2.6",
+     "2.5.6",
+     "2.1.1"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "accidental activation on touch release",
+    "style": "nl",
+    "expected": [
+     "2.5.2"
+    ],
+    "ranking": [
+     "2.5.2",
+     "2.5.8",
+     "2.5.5",
+     "2.4.13",
+     "2.4.7"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "tooltip appears on hover and must be dismissible",
+    "style": "nl",
+    "expected": [
+     "1.4.13"
+    ],
+    "ranking": [
+     "3.2.1",
+     "1.3.1",
+     "1.4.13",
+     "1.3.2",
+     "2.4.12"
+    ],
+    "rank": 3
+   },
+   {
+    "q": "shake the device to undo",
+    "style": "nl",
+    "expected": [
+     "2.5.4"
+    ],
+    "ranking": [
+     "2.5.4",
+     "2.5.2",
+     "2.5.5",
+     "3.3.4",
+     "1.3.4"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "single character keyboard shortcuts",
+    "style": "kw",
+    "expected": [
+     "2.1.4"
+    ],
+    "ranking": [
+     "2.1.4",
+     "2.5.7",
+     "3.1.2",
+     "2.5.1",
+     "2.5.2"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "images of text",
+    "style": "kw",
+    "expected": [
+     "1.4.5",
+     "1.4.9"
+    ],
+    "ranking": [
+     "1.1.1",
+     "1.4.5",
+     "1.4.3",
+     "1.4.9",
+     "1.4.6"
+    ],
+    "rank": 2
+   },
+   {
+    "q": "audio that plays automatically",
+    "style": "nl",
+    "expected": [
+     "1.4.2"
+    ],
+    "ranking": [
+     "1.2.2",
+     "1.2.4",
+     "1.2.1",
+     "1.2.7",
+     "1.4.2"
+    ],
+    "rank": 5
+   },
+   {
+    "q": "context changes unexpectedly when a field receives input",
+    "style": "nl",
+    "expected": [
+     "3.2.2",
+     "3.2.1"
+    ],
+    "ranking": [
+     "3.2.2",
+     "3.2.1",
+     "4.1.3",
+     "3.3.5",
+     "2.4.12"
+    ],
+    "rank": 1
+   },
+   {
+    "q": "tabela z nagłówkami kolumn",
+    "style": "pl",
+    "expected": [
+     "1.3.1"
+    ],
+    "ranking": [],
+    "rank": null
+   }
+  ]
+ },
+ "B": {
+  "search (FTS5, tytuł)": [
+   {
+    "sc": "1.4.3",
+    "expected": [
+     "1.4.6",
+     "1.4.11",
+     "1.4.1"
+    ],
+    "ranking": [
+     "2.4.11",
+     "2.4.13",
+     "3.3.8",
+     "2.5.8",
+     "1.4.6",
+     "1.4.11",
+     "2.4.7"
+    ],
+    "r5": 0.3333333333333333,
+    "r10": 0.6666666666666666,
+    "n_returned": 7
+   },
+   {
+    "sc": "2.4.7",
+    "expected": [
+     "2.4.11",
+     "2.4.12",
+     "2.4.13",
+     "2.4.3"
+    ],
+    "ranking": [
+     "1.4.13",
+     "2.4.13",
+     "2.4.12",
+     "2.4.11",
+     "4.1.2",
+     "2.5.3",
+     "1.4.3"
+    ],
+    "r5": 0.75,
+    "r10": 0.75,
+    "n_returned": 7
+   },
+   {
+    "sc": "3.3.1",
+    "expected": [
+     "3.3.3",
+     "3.3.4",
+     "3.3.2",
+     "4.1.3"
+    ],
+    "ranking": [
+     "3.3.6",
+     "3.3.3",
+     "2.4.2",
+     "3.3.4",
+     "4.1.3",
+     "1.2.4",
+     "4.1.1",
+     "1.4.1",
+     "3.3.2"
+    ],
+    "r5": 0.75,
+    "r10": 1.0,
+    "n_returned": 9
+   },
+   {
+    "sc": "1.2.2",
+    "expected": [
+     "1.2.4",
+     "1.2.1",
+     "1.2.3"
+    ],
+    "ranking": [
+     "1.2.6",
+     "1.2.4",
+     "1.2.8",
+     "1.2.1",
+     "1.2.7",
+     "1.2.5",
+     "1.2.3"
+    ],
+    "r5": 0.6666666666666666,
+    "r10": 1.0,
+    "n_returned": 7
+   },
+   {
+    "sc": "2.5.8",
+    "expected": [
+     "2.5.5",
+     "2.5.2"
+    ],
+    "ranking": [
+     "2.5.5",
+     "2.4.11",
+     "1.4.4",
+     "3.3.8",
+     "1.4.3",
+     "1.4.10",
+     "2.5.2",
+     "1.4.6",
+     "3.2.5"
+    ],
+    "r5": 0.5,
+    "r10": 1.0,
+    "n_returned": 9
+   },
+   {
+    "sc": "1.4.4",
+    "expected": [
+     "1.4.10",
+     "1.4.12",
+     "1.4.8"
+    ],
+    "ranking": [
+     "1.4.8",
+     "2.1.1",
+     "1.4.9",
+     "1.4.5",
+     "1.1.1",
+     "1.4.12",
+     "1.4.3"
+    ],
+    "r5": 0.3333333333333333,
+    "r10": 0.6666666666666666,
+    "n_returned": 7
+   },
+   {
+    "sc": "2.1.1",
+    "expected": [
+     "2.1.2",
+     "2.1.3",
+     "2.1.4",
+     "2.4.7"
+    ],
+    "ranking": [
+     "2.1.3",
+     "2.1.2",
+     "2.4.7",
+     "2.5.6",
+     "2.1.4",
+     "2.5.7",
+     "2.4.11"
+    ],
+    "r5": 1.0,
+    "r10": 1.0,
+    "n_returned": 7
+   },
+   {
+    "sc": "3.3.7",
+    "expected": [
+     "1.3.5",
+     "3.3.8"
+    ],
+    "ranking": [
+     "3.3.2",
+     "4.1.3",
+     "3.3.3",
+     "2.5.7",
+     "1.1.1",
+     "3.3.8"
+    ],
+    "r5": 0.0,
+    "r10": 0.5,
+    "n_returned": 6
+   },
+   {
+    "sc": "4.1.2",
+    "expected": [
+     "1.3.1",
+     "4.1.3",
+     "2.5.3"
+    ],
+    "ranking": [
+     "2.4.10",
+     "1.1.1",
+     "4.1.3",
+     "1.3.5",
+     "3.2.4",
+     "3.3.2",
+     "1.3.1",
+     "2.1.1"
+    ],
+    "r5": 0.3333333333333333,
+    "r10": 0.6666666666666666,
+    "n_returned": 8
+   },
+   {
+    "sc": "2.2.1",
+    "expected": [
+     "2.2.6",
+     "2.2.2"
+    ],
+    "ranking": [
+     "2.2.3",
+     "2.2.6",
+     "1.4.5",
+     "1.4.8",
+     "1.4.9",
+     "2.3.2",
+     "2.2.5",
+     "2.2.4"
+    ],
+    "r5": 0.5,
+    "r10": 0.5,
+    "n_returned": 8
+   }
+  ],
+  "graph_query (jak widzi model)": [
+   {
+    "sc": "1.4.3",
+    "expected": [
+     "1.4.6",
+     "1.4.11",
+     "1.4.1"
+    ],
+    "ranking": [
+     "1.4.6",
+     "1.4.8",
+     "1.4.4",
+     "1.4.5",
+     "1.4.9",
+     "2.1.1",
+     "2.1.2",
+     "2.1.3",
+     "2.1.4",
+     "2.2.1"
+    ],
+    "r5": 0.3333333333333333,
+    "r10": 0.3333333333333333,
+    "n_returned": 24
+   },
+   {
+    "sc": "2.4.7",
+    "expected": [
+     "2.4.11",
+     "2.4.12",
+     "2.4.13",
+     "2.4.3"
+    ],
+    "ranking": [
+     "2.1.1",
+     "2.4.13",
+     "3.2.1",
+     "1.4.11",
+     "2.4.8",
+     "2.4.9",
+     "2.5.1",
+     "2.5.2",
+     "2.5.3",
+     "2.5.4"
+    ],
+    "r5": 0.25,
+    "r10": 0.25,
+    "n_returned": 28
+   },
+   {
+    "sc": "3.3.1",
+    "expected": [
+     "3.3.3",
+     "3.3.4",
+     "3.3.2",
+     "4.1.3"
+    ],
+    "ranking": [
+     "3.3.2",
+     "3.3.3",
+     "3.3.4",
+     "3.3.5",
+     "3.3.6",
+     "3.3.7",
+     "3.3.8",
+     "3.3.9",
+     "4.1.1",
+     "4.1.2"
+    ],
+    "r5": 0.75,
+    "r10": 0.75,
+    "n_returned": 23
+   },
+   {
+    "sc": "1.2.2",
+    "expected": [
+     "1.2.4",
+     "1.2.1",
+     "1.2.3"
+    ],
+    "ranking": [
+     "1.2.8",
+     "1.2.3",
+     "1.2.4",
+     "1.2.5",
+     "1.2.6",
+     "1.2.7",
+     "1.2.9",
+     "1.3.1",
+     "1.3.2",
+     "1.3.3"
+    ],
+    "r5": 0.6666666666666666,
+    "r10": 0.6666666666666666,
+    "n_returned": 14
+   },
+   {
+    "sc": "2.5.8",
+    "expected": [
+     "2.5.5",
+     "2.5.2"
+    ],
+    "ranking": [
+     "3.1.1",
+     "3.1.2",
+     "3.1.3",
+     "3.1.4",
+     "3.1.5",
+     "3.1.6",
+     "3.2.1",
+     "3.2.2",
+     "3.2.3",
+     "3.2.4"
+    ],
+    "r5": 0.0,
+    "r10": 0.0,
+    "n_returned": 24
+   },
+   {
+    "sc": "1.4.4",
+    "expected": [
+     "1.4.10",
+     "1.4.12",
+     "1.4.8"
+    ],
+    "ranking": [
+     "1.4.5",
+     "1.4.6",
+     "1.4.8",
+     "1.4.9",
+     "2.1.1",
+     "2.1.2",
+     "2.1.3",
+     "2.1.4",
+     "2.2.1",
+     "2.2.2"
+    ],
+    "r5": 0.3333333333333333,
+    "r10": 0.3333333333333333,
+    "n_returned": 24
+   },
+   {
+    "sc": "2.1.1",
+    "expected": [
+     "2.1.2",
+     "2.1.3",
+     "2.1.4",
+     "2.4.7"
+    ],
+    "ranking": [
+     "1.3.1",
+     "2.1.3",
+     "4.1.2",
+     "2.4.7",
+     "2.4.13",
+     "3.2.1",
+     "2.1.2",
+     "2.1.4",
+     "2.2.1",
+     "2.2.2"
+    ],
+    "r5": 0.5,
+    "r10": 1.0,
+    "n_returned": 28
+   },
+   {
+    "sc": "3.3.7",
+    "expected": [
+     "1.3.5",
+     "3.3.8"
+    ],
+    "ranking": [
+     "3.3.8",
+     "3.3.9",
+     "4.1.1",
+     "4.1.2",
+     "4.1.3",
+     "1.1.1",
+     "1.2.1",
+     "1.2.2",
+     "1.2.3",
+     "1.2.4"
+    ],
+    "r5": 0.5,
+    "r10": 0.5,
+    "n_returned": 17
+   },
+   {
+    "sc": "4.1.2",
+    "expected": [
+     "1.3.1",
+     "4.1.3",
+     "2.5.3"
+    ],
+    "ranking": [
+     "1.3.1",
+     "2.5.3",
+     "1.1.1",
+     "2.1.1",
+     "2.1.3",
+     "2.4.4",
+     "2.4.9",
+     "4.1.3",
+     "1.2.1",
+     "1.2.2"
+    ],
+    "r5": 0.6666666666666666,
+    "r10": 1.0,
+    "n_returned": 19
+   },
+   {
+    "sc": "2.2.1",
+    "expected": [
+     "2.2.6",
+     "2.2.2"
+    ],
+    "ranking": [
+     "2.2.4",
+     "3.2.5",
+     "2.2.2",
+     "2.2.3",
+     "2.2.5",
+     "2.2.6",
+     "2.3.1",
+     "2.3.2",
+     "2.3.3",
+     "2.4.1"
+    ],
+    "r5": 0.5,
+    "r10": 1.0,
+    "n_returned": 26
+   }
+  ],
+  "graf (idealnie uszeregowany)": [
+   {
+    "sc": "1.4.3",
+    "expected": [
+     "1.4.6",
+     "1.4.11",
+     "1.4.1"
+    ],
+    "ranking": [
+     "1.4.6",
+     "1.4.11",
+     "1.4.1",
+     "1.3.1",
+     "4.1.2",
+     "2.4.13",
+     "2.5.8",
+     "1.3.2",
+     "2.4.3",
+     "2.5.3"
+    ],
+    "r5": 1.0,
+    "r10": 1.0,
+    "n_returned": 82
+   },
+   {
+    "sc": "2.4.7",
+    "expected": [
+     "2.4.11",
+     "2.4.12",
+     "2.4.13",
+     "2.4.3"
+    ],
+    "ranking": [
+     "2.4.13",
+     "4.1.2",
+     "2.1.1",
+     "2.4.3",
+     "1.3.1",
+     "2.4.11",
+     "1.4.11",
+     "2.1.2",
+     "2.5.8",
+     "3.2.1"
+    ],
+    "r5": 0.5,
+    "r10": 0.75,
+    "n_returned": 81
+   },
+   {
+    "sc": "3.3.1",
+    "expected": [
+     "3.3.3",
+     "3.3.4",
+     "3.3.2",
+     "4.1.3"
+    ],
+    "ranking": [
+     "3.3.3",
+     "4.1.3",
+     "3.3.2",
+     "1.1.1",
+     "1.4.11",
+     "3.3.4",
+     "1.4.1",
+     "2.2.1",
+     "2.3.1",
+     "2.4.13"
+    ],
+    "r5": 0.75,
+    "r10": 1.0,
+    "n_returned": 82
+   },
+   {
+    "sc": "1.2.2",
+    "expected": [
+     "1.2.4",
+     "1.2.1",
+     "1.2.3"
+    ],
+    "ranking": [
+     "1.2.4",
+     "1.2.1",
+     "1.2.3",
+     "1.1.1",
+     "1.2.6",
+     "1.2.8",
+     "1.2.5",
+     "1.2.9",
+     "2.2.2",
+     "1.2.7"
+    ],
+    "r5": 1.0,
+    "r10": 1.0,
+    "n_returned": 80
+   },
+   {
+    "sc": "2.5.8",
+    "expected": [
+     "2.5.5",
+     "2.5.2"
+    ],
+    "ranking": [
+     "2.4.13",
+     "4.1.2",
+     "2.1.1",
+     "2.4.7",
+     "1.3.1",
+     "2.5.3",
+     "2.1.2",
+     "2.4.3",
+     "1.4.11",
+     "2.4.11"
+    ],
+    "r5": 0.0,
+    "r10": 0.0,
+    "n_returned": 82
+   },
+   {
+    "sc": "1.4.4",
+    "expected": [
+     "1.4.10",
+     "1.4.12",
+     "1.4.8"
+    ],
+    "ranking": [
+     "1.4.8",
+     "1.4.12",
+     "1.4.10",
+     "1.4.11",
+     "1.4.5",
+     "2.4.13",
+     "1.1.1",
+     "1.4.9",
+     "1.4.13",
+     "1.4.3"
+    ],
+    "r5": 1.0,
+    "r10": 1.0,
+    "n_returned": 84
+   },
+   {
+    "sc": "2.1.1",
+    "expected": [
+     "2.1.2",
+     "2.1.3",
+     "2.1.4",
+     "2.4.7"
+    ],
+    "ranking": [
+     "4.1.2",
+     "1.3.1",
+     "2.1.2",
+     "2.4.3",
+     "2.4.7",
+     "2.4.13",
+     "2.5.8",
+     "3.2.1",
+     "2.4.11",
+     "2.5.3"
+    ],
+    "r5": 0.5,
+    "r10": 0.5,
+    "n_returned": 77
+   },
+   {
+    "sc": "3.3.7",
+    "expected": [
+     "1.3.5",
+     "3.3.8"
+    ],
+    "ranking": [
+     "2.2.1",
+     "1.1.1",
+     "1.2.2",
+     "1.2.9",
+     "1.4.10",
+     "1.4.11",
+     "2.2.2",
+     "2.2.3",
+     "2.5.2",
+     "2.5.7"
+    ],
+    "r5": 0.0,
+    "r10": 0.0,
+    "n_returned": 78
+   },
+   {
+    "sc": "4.1.2",
+    "expected": [
+     "1.3.1",
+     "4.1.3",
+     "2.5.3"
+    ],
+    "ranking": [
+     "1.3.1",
+     "2.4.7",
+     "2.1.1",
+     "2.4.3",
+     "2.4.13",
+     "2.5.3",
+     "1.4.11",
+     "1.3.2",
+     "2.1.2",
+     "2.5.8"
+    ],
+    "r5": 0.3333333333333333,
+    "r10": 0.6666666666666666,
+    "n_returned": 80
+   },
+   {
+    "sc": "2.2.1",
+    "expected": [
+     "2.2.6",
+     "2.2.2"
+    ],
+    "ranking": [
+     "2.2.2",
+     "1.1.1",
+     "1.4.11",
+     "1.3.1",
+     "2.1.2",
+     "4.1.2",
+     "1.3.2",
+     "2.2.3",
+     "2.4.13",
+     "2.4.3"
+    ],
+    "r5": 0.5,
+    "r10": 0.5,
+    "n_returned": 86
+   }
+  ],
+  "FTS5+graf (RRF)": [
+   {
+    "sc": "1.4.3",
+    "expected": [
+     "1.4.6",
+     "1.4.11",
+     "1.4.1"
+    ],
+    "ranking": [
+     "1.4.6",
+     "1.4.11",
+     "2.4.13",
+     "2.5.8",
+     "2.4.11",
+     "2.4.7",
+     "3.3.8",
+     "1.4.1",
+     "1.3.1",
+     "4.1.2"
+    ],
+    "r5": 0.6666666666666666,
+    "r10": 1.0,
+    "n_returned": 82
+   },
+   {
+    "sc": "2.4.7",
+    "expected": [
+     "2.4.11",
+     "2.4.12",
+     "2.4.13",
+     "2.4.3"
+    ],
+    "ranking": [
+     "2.4.13",
+     "4.1.2",
+     "2.4.11",
+     "2.5.3",
+     "1.4.13",
+     "2.4.12",
+     "1.4.3",
+     "2.1.1",
+     "2.4.3",
+     "1.3.1"
+    ],
+    "r5": 0.5,
+    "r10": 1.0,
+    "n_returned": 81
+   },
+   {
+    "sc": "3.3.1",
+    "expected": [
+     "3.3.3",
+     "3.3.4",
+     "3.3.2",
+     "4.1.3"
+    ],
+    "ranking": [
+     "3.3.3",
+     "4.1.3",
+     "3.3.4",
+     "3.3.2",
+     "1.4.1",
+     "3.3.6",
+     "2.4.2",
+     "4.1.1",
+     "1.2.4",
+     "1.1.1"
+    ],
+    "r5": 1.0,
+    "r10": 1.0,
+    "n_returned": 82
+   },
+   {
+    "sc": "1.2.2",
+    "expected": [
+     "1.2.4",
+     "1.2.1",
+     "1.2.3"
+    ],
+    "ranking": [
+     "1.2.4",
+     "1.2.6",
+     "1.2.1",
+     "1.2.8",
+     "1.2.3",
+     "1.2.5",
+     "1.2.7",
+     "1.1.1",
+     "1.2.9",
+     "2.2.2"
+    ],
+    "r5": 1.0,
+    "r10": 1.0,
+    "n_returned": 80
+   },
+   {
+    "sc": "2.5.8",
+    "expected": [
+     "2.5.5",
+     "2.5.2"
+    ],
+    "ranking": [
+     "2.4.11",
+     "2.5.5",
+     "1.4.3",
+     "1.4.6",
+     "1.4.4",
+     "2.5.2",
+     "1.4.10",
+     "3.3.8",
+     "3.2.5",
+     "2.4.13"
+    ],
+    "r5": 0.5,
+    "r10": 1.0,
+    "n_returned": 82
+   },
+   {
+    "sc": "1.4.4",
+    "expected": [
+     "1.4.10",
+     "1.4.12",
+     "1.4.8"
+    ],
+    "ranking": [
+     "1.4.8",
+     "1.4.12",
+     "1.4.5",
+     "1.4.9",
+     "1.1.1",
+     "1.4.3",
+     "2.1.1",
+     "1.4.10",
+     "1.4.11",
+     "2.4.13"
+    ],
+    "r5": 0.6666666666666666,
+    "r10": 1.0,
+    "n_returned": 84
+   },
+   {
+    "sc": "2.1.1",
+    "expected": [
+     "2.1.2",
+     "2.1.3",
+     "2.1.4",
+     "2.4.7"
+    ],
+    "ranking": [
+     "2.1.2",
+     "2.4.7",
+     "2.4.11",
+     "2.1.3",
+     "2.1.4",
+     "2.5.7",
+     "4.1.2",
+     "1.3.1",
+     "2.4.3",
+     "2.5.6"
+    ],
+    "r5": 1.0,
+    "r10": 1.0,
+    "n_returned": 78
+   },
+   {
+    "sc": "3.3.7",
+    "expected": [
+     "1.3.5",
+     "3.3.8"
+    ],
+    "ranking": [
+     "1.1.1",
+     "3.3.2",
+     "2.5.7",
+     "4.1.3",
+     "3.3.8",
+     "3.3.3",
+     "2.2.1",
+     "1.2.2",
+     "1.2.9",
+     "1.4.10"
+    ],
+    "r5": 0.5,
+    "r10": 0.5,
+    "n_returned": 78
+   },
+   {
+    "sc": "4.1.2",
+    "expected": [
+     "1.3.1",
+     "4.1.3",
+     "2.5.3"
+    ],
+    "ranking": [
+     "1.3.1",
+     "2.1.1",
+     "4.1.3",
+     "1.1.1",
+     "3.3.2",
+     "1.3.5",
+     "3.2.4",
+     "2.4.10",
+     "2.4.7",
+     "2.4.3"
+    ],
+    "r5": 0.6666666666666666,
+    "r10": 0.6666666666666666,
+    "n_returned": 80
+   },
+   {
+    "sc": "2.2.1",
+    "expected": [
+     "2.2.6",
+     "2.2.2"
+    ],
+    "ranking": [
+     "2.2.3",
+     "1.4.5",
+     "1.4.9",
+     "1.4.8",
+     "2.2.6",
+     "2.3.2",
+     "2.2.5",
+     "2.2.4",
+     "2.2.2",
+     "1.1.1"
+    ],
+    "r5": 0.5,
+    "r10": 1.0,
+    "n_returned": 86
+   }
+  ]
+ }
+}
