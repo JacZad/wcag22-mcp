@@ -40,11 +40,8 @@ except ImportError:
 
 # ── Logging ──
 
-# Cloud Run ustawia K_SERVICE. Tam system plików to tmpfs liczony do limitu
-# pamięci, a plik logu i tak nie trafia do Cloud Logging — więc w chmurze
-# logujemy wyłącznie na stderr. Lokalnie zostaje plik plus stderr dla ostrzeżeń.
-IN_CLOUD_RUN = bool(os.environ.get("K_SERVICE"))
-
+# Log do pliku plus stderr dla ostrzeżeń. Na Mikrusie katalog logów jest
+# montowany z hosta (deploy-mikrus.sh).
 LOG_DIR = Path.home() / ".hermes" / "logs"
 LOG_FILE = LOG_DIR / "wcag22-mcp.log"
 
@@ -55,20 +52,19 @@ log.propagate = False
 
 # stdio używa stdout na protokół, więc stderr jest bezpieczny w każdym trybie.
 sh = logging.StreamHandler(sys.stderr)
-sh.setLevel(logging.INFO if IN_CLOUD_RUN else logging.WARNING)
+sh.setLevel(logging.WARNING)
 sh.setFormatter(logging.Formatter("[wcag22] %(levelname)s: %(message)s"))
 log.addHandler(sh)
 
-if not IN_CLOUD_RUN:
-    try:
-        LOG_DIR.mkdir(parents=True, exist_ok=True)
-        fh = logging.FileHandler(LOG_FILE, mode="a", encoding="utf-8")
-        fh.setLevel(logging.INFO)
-        log.addHandler(fh)
-    except OSError as e:
-        # Katalog domowy bywa niezapisywalny — to nie powód, żeby nie wstać.
-        LOG_FILE = None
-        log.warning(f"Nie mogę pisać do pliku logu: {e}")
+try:
+    LOG_DIR.mkdir(parents=True, exist_ok=True)
+    fh = logging.FileHandler(LOG_FILE, mode="a", encoding="utf-8")
+    fh.setLevel(logging.INFO)
+    log.addHandler(fh)
+except OSError as e:
+    # Katalog domowy bywa niezapisywalny — to nie powód, żeby nie wstać.
+    LOG_FILE = None
+    log.warning(f"Nie mogę pisać do pliku logu: {e}")
 
 
 # Strukturalny log wywołań narzędzi (JSONL, jeden rekord na tools/call) —
@@ -79,21 +75,15 @@ calls_log = logging.getLogger("wcag22.calls")
 calls_log.setLevel(logging.INFO)
 calls_log.propagate = False
 
-if IN_CLOUD_RUN:
-    # Cloud Logging rozpoznaje linie JSON na stderr jako wpisy strukturalne.
-    _ch = logging.StreamHandler(sys.stderr)
+try:
+    from logging.handlers import RotatingFileHandler
+    CALLS_FILE = LOG_DIR / "calls.jsonl"
+    _ch = RotatingFileHandler(CALLS_FILE, maxBytes=10_000_000, backupCount=5, encoding="utf-8")
     _ch.setFormatter(logging.Formatter("%(message)s"))
     calls_log.addHandler(_ch)
-else:
-    try:
-        from logging.handlers import RotatingFileHandler
-        CALLS_FILE = LOG_DIR / "calls.jsonl"
-        _ch = RotatingFileHandler(CALLS_FILE, maxBytes=10_000_000, backupCount=5, encoding="utf-8")
-        _ch.setFormatter(logging.Formatter("%(message)s"))
-        calls_log.addHandler(_ch)
-    except OSError as e:
-        CALLS_FILE = None
-        log.warning(f"Nie mogę pisać do calls.jsonl: {e}")
+except OSError as e:
+    CALLS_FILE = None
+    log.warning(f"Nie mogę pisać do calls.jsonl: {e}")
 
 # WCAG22_LOG_FULL=1 zapisuje pełną treść odpowiedzi zamiast początku.
 _LOG_FULL = os.environ.get("WCAG22_LOG_FULL") == "1"
@@ -893,10 +883,9 @@ mcp = FastMCP(
         "to several criteria — check get_technique(id, sc=...) before citing."
     ),
     json_response=True,
-    # Bez tego FastMCP trzyma sesję w pamięci instancji. Na Cloud Run przy
-    # kilku instancjach i bez session affinity kolejne żądanie tego samego
-    # klienta trafia gdzie indziej i dostaje "No valid session ID". Wszystkie
-    # narzędzia tutaj są bezstanowe, więc nie tracimy niczego.
+    # Bez tego FastMCP trzyma sesję w pamięci procesu i po restarcie kontenera
+    # klient dostaje "No valid session ID". Wszystkie narzędzia tutaj są
+    # bezstanowe, więc nie tracimy niczego.
     stateless_http=True,
     transport_security=TransportSecuritySettings(
         enable_dns_rebinding_protection=False,
@@ -2062,15 +2051,13 @@ def main():
 
     def banner(line):
         """
-        Baner startowy. W Cloud Run log.info trafia na stderr, więc dodatkowy
-        print tylko by go zdublował; lokalnie stderr przyjmuje dopiero ostrzeżenia,
-        więc print jest jedynym sposobem, żeby użytkownik to zobaczył.
+        Baner startowy. stderr przyjmuje dopiero ostrzeżenia, więc print jest
+        jedynym sposobem, żeby użytkownik zobaczył go w konsoli.
         """
         log.info(line)
-        if not IN_CLOUD_RUN:
-            print(line, file=sys.stderr)
+        print(line, file=sys.stderr)
 
-    log_target = "stderr (Cloud Run)" if IN_CLOUD_RUN else (LOG_FILE or "stderr")
+    log_target = LOG_FILE or "stderr"
 
     banner("=" * 72)
     banner(f"  🚀 SERVER START  |  v{__version__}  |  {_fmt_ts()}")
