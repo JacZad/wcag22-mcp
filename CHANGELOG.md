@@ -4,7 +4,15 @@ Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/), wersj
 
 ## [Niewydane]
 
+### Dodane
+
+- Każda odpowiedź zaczyna się etykietą poziomu źródła: norma WCAG (normatywna), glosariusz, Understanding, techniki, wzorce APG (informacyjne, nie WCAG), obliczenia, graf, wyszukiwanie.
+- `get_technique(id, sc="")` — lista wszystkich kryteriów techniki, znaczenie typu i ostrzeżenie, gdy błąd (F) dotyczy kilku kryteriów; z `sc` ostrzega przed „złym kryterium”.
+- `test_normative.py` — test regresyjny struktury spornych kryteriów (2.2.2, 3.3.8, 1.4.11, 2.5.8, 4.1.1…).
+
 ### Naprawione
+
+- Lista `<dl>` w treści kryterium nie jest już zawsze „Exceptions”. `get()` podaje jej typ: warunki łączne (AND, np. 2.2.2), alternatywy (OR, np. 3.3.8), zamknięta lista wyjątków (2.5.8) albo zakres (1.4.11). Uwagi (Notes) są osobno i oznaczone jako informacyjne, znacznik „New” nie trafia do treści, 4.1.1 ma flagę `removed` z ostrzeżeniem.
 
 - Mapowanie technika → kryterium pochodzi teraz z `understanding.11tydata.js` (dane W3C), a nie z heurystyki po treści techniki. Wcześniej `get_techniques("2.1.1")` zwracało F105 (dotyczy 2.5.1, 2.1.1 pojawia się tylko w uwadze). Do przebudowy danych potrzebny jest `node`.
 - `get_pattern(name)` — parametr nazywał się `pattern_name`, więc `name` i `pattern_id` były ignorowane i zwracany był indeks wzorców.

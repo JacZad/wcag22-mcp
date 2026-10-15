@@ -137,6 +137,20 @@ python3 server.py --transport streamable-http --port 9100
 - Błędny klucz → `401 Unauthorized`
 - Jeśli `--api-key` nie jest ustawiony — serwer działa bez zabezpieczenia (kompatybilność wsteczna)
 
+### Osobne klucze dla klientów
+
+`WCAG22_API_KEYS` przyjmuje listę `etykieta:klucz` rozdzieloną przecinkami. Etykieta
+rozpoznanego klucza trafia do `calls.jsonl` (pole `client`), a `analyze_calls.py`
+grupuje ruch po kliencie. Klucz jednego klienta można wycofać, usuwając go z listy
+i restartując serwer; pozostałe działają dalej.
+
+```bash
+export WCAG22_API_KEYS="jacek:klucz-1,zespol-a:klucz-2"
+```
+
+Działa razem z `WCAG22_API_KEY` (ten klucz dostaje etykietę `default`). Etykieta nie może
+zawierać przecinka ani dwukropka; klucze nie mogą zawierać przecinka.
+
 ### Przykład curl
 
 ```bash

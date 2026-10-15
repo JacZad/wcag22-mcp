@@ -117,13 +117,14 @@ def _result_text(resp_bytes):
     return text, bool(result.get("isError"))
 
 
-def log_call(remote, user_agent, tool_name, tool_args, elapsed_ms, resp_bytes, status, total_bytes=None):
+def log_call(remote, user_agent, tool_name, tool_args, elapsed_ms, resp_bytes, status, total_bytes=None, client=""):
     """Zapisz jeden rekord JSONL dla wywołania narzędzia."""
     text, is_error = _result_text(resp_bytes)
     rec = {
         "ts": datetime.now(timezone.utc).isoformat(timespec="milliseconds"),
         "ip": remote,
         "ua": user_agent,
+        "client": client,
         "tool": tool_name,
         "args": {k: _trunc(v, 500) for k, v in (tool_args or {}).items()},
         "ms": elapsed_ms,
@@ -162,7 +163,7 @@ def _format_size(text):
     return f"{n/1024:.1f} KB"
 
 
-def log_request(remote, method, params, tool_name, tool_args, body_preview):
+def log_request(remote, method, params, tool_name, tool_args, body_preview, client=""):
     """Zaloguj przychodzące żądanie."""
     ts = _fmt_ts()
     lines = []
@@ -180,6 +181,8 @@ def log_request(remote, method, params, tool_name, tool_args, body_preview):
 
     if remote:
         lines.append(f"  Źródło:       {remote}")
+    if client:
+        lines.append(f"  Klient:       {client}")
 
     lines.append("-" * 72)
 
@@ -211,16 +214,54 @@ def log_response(tool_name, elapsed_ms, content, error=None, truncated=False):
 
 # ─── API key middleware ───
 
+def parse_api_keys(single: str = "", multi: str = "") -> dict:
+    """
+    Zbuduj słownik {klucz: etykieta klienta}.
+
+    single — pojedynczy klucz (WCAG22_API_KEY / --api-key), etykieta "default".
+    multi  — lista "etykieta:klucz" rozdzielona przecinkami (WCAG22_API_KEYS),
+             np. "jacek:abc123,zespol-a:def456". Etykieta trafia do logu.
+    """
+    keys = {}
+    if single:
+        keys[single] = "default"
+    for item in multi.split(","):
+        item = item.strip()
+        if not item:
+            continue
+        label, sep, key = item.partition(":")
+        label, key = label.strip(), key.strip()
+        if not sep or not label or not key:
+            raise ValueError(f"WCAG22_API_KEYS: oczekiwano 'etykieta:klucz', jest {_trunc(label, 20)!r}")
+        if key in keys:
+            raise ValueError(f"WCAG22_API_KEYS: klucz etykiety {label!r} powtarza się")
+        keys[key] = label
+    return keys
+
+
+def match_api_key(request_key: str, keys: dict):
+    """Etykieta klienta dla podanego klucza albo None. Porównuje ze wszystkimi kluczami w stałym czasie."""
+    rk = request_key.encode("utf-8")
+    found = None
+    for key, label in keys.items():
+        # compare_digest zamiast == — bez wycieku informacji o zgodnych znakach.
+        if hmac.compare_digest(rk, key.encode("utf-8")):
+            found = label
+    return found
+
+
 class APIKeyMiddleware:
     """
     ASGI middleware sprawdzający nagłówek X-API-Key.
-    Jeśli klucz nie pasuje — zwraca 401.
-    Jeśli klucz jest pusty (brak zabezpieczenia) — przepuszcza bez sprawdzenia.
+    Jeśli klucz nie pasuje do żadnego z kluczy — zwraca 401.
+    Jeśli nie ma żadnego klucza (brak zabezpieczenia) — przepuszcza bez sprawdzenia.
+    Etykietę rozpoznanego klucza zapisuje w scope["wcag_client"] (trafia do calls.jsonl).
     """
 
-    def __init__(self, app, api_key: str):
+    def __init__(self, app, keys):
         self.app = app
-        self.api_key = api_key
+        # Dla zgodności: pojedynczy klucz jako string.
+        self.keys = parse_api_keys(keys) if isinstance(keys, str) else dict(keys)
 
     async def __call__(self, scope, receive, send):
         # Skip non-HTTP (WebSocket, etc.)
@@ -229,7 +270,7 @@ class APIKeyMiddleware:
             return
 
         # Jeśli nie ustawiono klucza — przepuść bez sprawdzania
-        if not self.api_key:
+        if not self.keys:
             await self.app(scope, receive, send)
             return
 
@@ -237,9 +278,8 @@ class APIKeyMiddleware:
         headers = dict(scope.get("headers", []))
         request_key = headers.get(b"x-api-key", b"").decode("utf-8", "replace")
 
-        # compare_digest zamiast != — stały czas porównania, bez wycieku
-        # informacji o tym, ile znaków klucza się zgadza.
-        if not hmac.compare_digest(request_key.encode("utf-8"), self.api_key.encode("utf-8")):
+        client = match_api_key(request_key, self.keys)
+        if client is None:
             log.warning(f"  🔒 ODRZUCONE (401)  |  {_fmt_ts()}  |  podany klucz: {_trunc(request_key, 20)}")
             body = json.dumps({
                 "error": "Unauthorized",
@@ -260,6 +300,7 @@ class APIKeyMiddleware:
             })
             return
 
+        scope["wcag_client"] = client
         await self.app(scope, receive, send)
 
 
@@ -316,7 +357,8 @@ class MCPLogMiddleware:
                 pass
 
         # Log request
-        log_request(remote, method, params, tool_name, tool_args, "")
+        client = scope.get("wcag_client", "")
+        log_request(remote, method, params, tool_name, tool_args, "", client)
 
         # Odtwórz receive dla wewnętrznej aplikacji
         body_sent = False
@@ -378,13 +420,13 @@ class MCPLogMiddleware:
             elapsed_ms = int((time.time() - start) * 1000)
             log_response(tool_name, elapsed_ms, "", error=str(e))
             if tool_name:
-                log_call(remote, user_agent, tool_name, tool_args, elapsed_ms, b"", 500)
+                log_call(remote, user_agent, tool_name, tool_args, elapsed_ms, b"", 500, client=client)
             raise
 
         elapsed_ms = int((time.time() - start) * 1000)
         if tool_name:
             log_call(remote, user_agent, tool_name, tool_args, elapsed_ms,
-                     b"".join(response_chunks), status, response_bytes)
+                     b"".join(response_chunks), status, response_bytes, client)
         resp_text = b"".join(response_chunks)[:_LOG_BODY_LIMIT].decode("utf-8", errors="replace")
         log_response(tool_name, elapsed_ms, resp_text, error=None,
                      truncated=response_bytes > _LOG_BODY_LIMIT)
@@ -660,12 +702,13 @@ try:
             if term_lower in md:
                 G.add_edge("T:" + tid, dnode, relation="references")
 
-    # Edge: SC → definition. Bierzemy też exceptions_md, bo dla 17 kryteriów
-    # to tam wylądowała treść normatywna (błąd podziału w build_data.py).
+    # Edge: SC → definition. Treść normatywna to zdanie wiodące plus lista
+    # warunków/wyjątków (items_md); uwagi też bywają źródłem terminów.
     def _sc_haystack(sc):
         return " ".join((
             sc.get("normative_md", ""),
-            sc.get("exceptions_md", ""),
+            sc.get("items_md", ""),
+            " ".join(sc.get("notes", [])),
             sc.get("understanding_full_md", ""),
         )).lower()
 
@@ -759,6 +802,60 @@ def _resolve(identifier):
     return min(candidates)[1] if candidates else None
 
 
+# ─── Poziom źródła ───
+#
+# Agenci mieszali normę z Understanding, technikami i APG — np. brali wzorzec
+# APG (pętla fokusu w modalu) albo przykład z Understanding za wymóg WCAG.
+# Każda odpowiedź mówi więc wprost, z jakiego poziomu pochodzi.
+
+SOURCE_LABELS = {
+    "wcag": "📜 Source: WCAG 2.2 Recommendation — NORMATIVE (the requirement itself).",
+    "glossary": "📜 Source: WCAG 2.2 glossary — NORMATIVE (defined terms are part of the requirements; notes and examples are informative).",
+    "understanding": "📘 Source: Understanding WCAG 2.2 — INFORMATIVE. Explains intent; does not add, remove or extend requirements.",
+    "understanding_summary": "📘 Source: summary of Understanding WCAG 2.2 prepared for this server — INFORMATIVE. Quote the normative text from get() when stating a failure.",
+    "techniques": "🔧 Source: Techniques for WCAG 2.2 — INFORMATIVE. Sufficient/advisory techniques are one way to pass; not using one is NOT a failure. A failure (F) documents one way to fail the criteria it lists.",
+    "pattern": "🧩 Source: WAI-ARIA Authoring Practices (APG) + server notes — INFORMATIVE, NOT a WCAG requirement. Deviating from APG is not by itself a WCAG failure; report against a WCAG criterion only when its normative text is not met.",
+    "calc": "🧮 Source: calculation by this server using the WCAG 2.2 formulas (contrast ratio, relative luminance).",
+    "graph": "🕸 Source: relation graph derived from W3C data — navigation aid, not normative.",
+    "search": "🔎 Search results mix levels: SC = normative, Understanding/techniques = informative. Open the item with get()/get_technique() before citing it.",
+}
+
+
+TECH_TYPE_MEANING = {
+    "Failure": "a documented way to FAIL the criteria listed below",
+    "Technique": "a way to meet the criteria below (sufficient or advisory, depending on the criterion); not using it is NOT a failure",
+}
+
+
+def _indent(text, prefix):
+    """Wcięcie wierszy kontynuacji, żeby wielowierszowy punkt nie rozbił listy."""
+    return text.replace("\n", "\n" + prefix)
+
+
+def _source(kind):
+    return f"*{SOURCE_LABELS[kind]}*"
+
+
+LIST_KIND_HEADINGS = {
+    "all": "Conditions — ALL must be true (AND)",
+    "any": "Conditions — AT LEAST ONE must be true (OR)",
+    "exceptions": "Exceptions — the criterion does not apply when ANY of these holds (closed list)",
+    "each": "Scope — each item is a separate requirement; all of them apply",
+}
+
+LIST_KIND_HINTS = {
+    "all": "⚠️ Failing any single condition fails the criterion.",
+    "any": "⚠️ Content passes if one condition is met; it fails only when none is met.",
+    "exceptions": "⚠️ These are the only exceptions in the normative text. Do not add others (e.g. from Understanding examples or intuition).",
+}
+
+REMOVED_SC_NOTE = (
+    "⚠️ **Obsolete and removed in WCAG 2.2.** Do not report failures of this "
+    "criterion under WCAG 2.2. Under WCAG 2.0/2.1 the 2023 errata treat it as "
+    "always satisfied for content using HTML or XML."
+)
+
+
 def _snippet(text, query, max_len=150):
     if not text:
         return ""
@@ -787,7 +884,13 @@ mcp = FastMCP(
         "first, e.g. 'tekst alternatywny dla obrazków' -> search('alt text images'). "
         "Reply to the user in their own language. Success criteria can be given "
         "by ID (1.4.3), slug or title; use search() to find a criterion from a "
-        "description."
+        "description. "
+        "Every answer starts with its source level: WCAG normative text, "
+        "Understanding/techniques (informative) or APG patterns (informative, "
+        "not WCAG). Base a failure only on normative text from get(); respect "
+        "whether its list is AND, OR, exceptions or scope, and never add "
+        "exceptions that get() does not list. A failure technique (F) may map "
+        "to several criteria — check get_technique(id, sc=...) before citing."
     ),
     json_response=True,
     # Bez tego FastMCP trzyma sesję w pamięci instancji. Na Cloud Run przy
@@ -827,16 +930,25 @@ def get(identifier: str) -> str:
         title_line += f"  |  {pl_title}"
     lines = [
         title_line,
-        f"**Level:** {sc.get('level', '')}  **Version:** {sc.get('version', '')}",
-        f"**Principle:** {sc.get('principle', '')}  **Guideline:** {sc.get('guideline', '')}",
+        _source("wcag"),
         "",
-        "## Normative Text",
-        sc.get('normative_md', ''),
+        f"**Level:** {sc.get('level', '')}  **Added in:** {sc.get('version', '')}",
+        f"**Principle:** {sc.get('principle', '')}  **Guideline:** {sc.get('guideline', '')}",
     ]
-    if sc.get('exceptions_md'):
-        lines.append("")
-        lines.append("## Exceptions")
-        lines.append(sc['exceptions_md'])
+    if sc.get("removed"):
+        lines += ["", REMOVED_SC_NOTE]
+    if sc.get('normative_md'):
+        lines += ["", "## Normative Text", sc['normative_md']]
+    if sc.get("items"):
+        lines += ["", f"### {LIST_KIND_HEADINGS.get(sc.get('list_kind'), 'Items')}"]
+        for n, item in enumerate(sc["items"], 1):
+            lines.append(f"{n}. **{item['label']}** — {_indent(item['text'], '   ')}")
+        hint = LIST_KIND_HINTS.get(sc.get("list_kind"))
+        if hint:
+            lines += ["", hint]
+    if sc.get("notes"):
+        lines += ["", "## Notes (informative — not requirements)"]
+        lines += [f"- {_indent(note, '  ')}" for note in sc["notes"]]
     lines.append("")
     lines.append(f'💡 Objaśnienie i przykłady: get_understanding("{sc["id"]}")')
     lines.append(f'🔧 Techniki: get_techniques("{sc["id"]}")')
@@ -880,7 +992,7 @@ def get_definition(term: str) -> str:
         hint = f" Podobne hasła: {', '.join(near)}." if near else ""
         return f"Term '{term}' not found.{hint}"
 
-    lines = [f"## {defn['term']}", "", defn['definition_md']]
+    lines = [f"## {defn['term']}", _source("glossary"), "", defn['definition_md']]
     if defn.get('details'):
         lines.append("")
         lines.append("**Examples:**")
@@ -909,7 +1021,7 @@ def get_techniques(identifier: str, failures_only: bool = False) -> str:
     header = f"# Techniques for {title}"
     if pl_title:
         header += f"  |  {pl_title}"
-    header += "\n"
+    header += "\n" + _source("techniques") + "\n"
 
     tech_ids = INDEXES.get("tech_by_sc", {}).get(sc_id, [])
     failure_ids = INDEXES.get("failures_by_sc", {}).get(sc_id, [])
@@ -947,12 +1059,16 @@ def get_techniques(identifier: str, failures_only: bool = False) -> str:
 
 
 @mcp.tool()
-def get_technique(technique_id: str) -> str:
+def get_technique(technique_id: str, sc: str = "") -> str:
     """
-    Get the full content of a specific WCAG technique by its ID.
+    Get the full content of a specific WCAG technique by its ID, with its type
+    and ALL success criteria it relates to.
 
-    Examples: "G103", "H2", "F3", "ARIA14"
-    Returns the full technique description, applicability, examples, and tests.
+    A failure (F) often maps to several criteria (e.g. F78 → 1.4.11, 2.4.7,
+    2.4.13). Pass `sc` with the criterion you plan to cite and the tool warns
+    if the technique does not relate to it.
+
+    Examples: get_technique("G103"), get_technique("F78", sc="2.4.7")
     """
     tid = technique_id.strip()
     tech = TECHNIQUES.get(tid)
@@ -966,14 +1082,37 @@ def get_technique(technique_id: str) -> str:
                 f"G18, H37, ARIA1, C45 or F78 — use get_techniques(\"<kryterium>\") "
                 f"to list the techniques for a success criterion.")
 
+    tech_type = tech.get('type', '').capitalize()
     lines = [
         f"# {tid}",
+        _source("techniques"),
+        "",
         f"**Category:** {tech.get('category', '')}",
-        f"**Type:** {tech.get('type', '')}",
+        f"**Type:** {tech_type} — {TECH_TYPE_MEANING.get(tech_type, '')}".rstrip(" —"),
         "",
     ]
-    if tech.get("applies_to"):
-        lines.append(f"**Applies to:** {', '.join(tech['applies_to'])}")
+    applies = tech.get("applies_to", [])
+    if applies:
+        lines.append(f"## Related success criteria ({len(applies)})")
+        for sc_id in applies:
+            s = SCS.get(sc_id, {})
+            lines.append(f"- **{sc_id}** {s.get('title', '')} ({s.get('level', '')})")
+        if tech_type == "Failure" and len(applies) > 1:
+            lines.append("")
+            lines.append(f"⚠️ This failure maps to {len(applies)} criteria. Cite each "
+                         f"one whose normative text is actually not met — check them "
+                         f"with get(), do not assume the first one.")
+        lines.append("")
+
+    if sc.strip():
+        wanted = _resolve(sc) or sc.strip()
+        if wanted not in applies:
+            lines.append(f"🚫 **Wrong criterion?** {tid} is not documented for {wanted}. "
+                         f"It relates to: {', '.join(applies) or 'no criterion'}. "
+                         f"Either cite one of those, or justify {wanted} from its own "
+                         f"normative text (get(\"{wanted}\")) without relying on {tid}.")
+        else:
+            lines.append(f"✅ {tid} is documented for {wanted}.")
         lines.append("")
 
     content = tech.get("content_md", "")
@@ -1009,6 +1148,7 @@ def check_contrast(foreground: str, background: str) -> str:
 
     return "\n".join([
         f"# Kontrast: {ratio:.2f}:1",
+        _source("calc"),
         "",
         "| | Kolor |",
         "|---|---|",
@@ -1090,7 +1230,7 @@ def get_understanding(identifier: str) -> str:
     if full_md:
         hint = (f"\n\nℹ️ Pełny dokument W3C ({len(full_md)} znaków) jest dostępny przez "
                 f"get_full_understanding — wywołuj go tylko na wyraźną prośbę użytkownika.")
-    return f"{heading} — streszczenie\n\n{short_md}{hint}\n\n📖 [Full understanding]({url})"
+    return f"{heading} — streszczenie\n{_source('understanding_summary')}\n\n{short_md}{hint}\n\n📖 [Full understanding]({url})"
 
 
 @mcp.tool()
@@ -1112,7 +1252,7 @@ def get_full_understanding(identifier: str) -> str:
     full_md = sc.get("understanding_full_md", "")
     if not full_md:
         return f"No understanding document for '{identifier}'."
-    return f"{heading}\n\n{full_md}\n\n📖 [Full understanding]({url})"
+    return f"{heading}\n{_source('understanding')}\n\n{full_md}\n\n📖 [Full understanding]({url})"
 
 
 def _principle(principle_id: str) -> str:
@@ -1120,7 +1260,7 @@ def _principle(principle_id: str) -> str:
     if not p:
         return f"Principle '{principle_id}' not found. Use 1-4."
 
-    lines = [f"# Principle {p['num']}: {p['title']}", ""]
+    lines = [f"# Principle {p['num']}: {p['title']}", _source("wcag"), ""]
 
     for gn in p.get("guidelines", []):
         g = GUIDELINES.get(gn, {})
@@ -1141,6 +1281,7 @@ def _guideline(guideline_id: str) -> str:
     p = PRINCIPLES.get(g.get("principle", ""), {})
     lines = [
         f"# Guideline {g['num']}: {g['title']}",
+        _source("wcag"),
         f"**Principle:** {g.get('principle', '')} — {p.get('title', '')}",
         "",
     ]
@@ -1213,6 +1354,7 @@ def get_pattern(name: str = "") -> str:
 
     lines = [
         f"# {pattern.get('name', pname)} — wzorzec deweloperski",
+        _source("pattern"),
         "",
     ]
 
@@ -1376,7 +1518,7 @@ def _search_fallback(query, started_at):
         title = sc.get("title", "")
         pl_title = SC_PL.get(sc_id, "")
         haystack = " ".join((title, pl_title, sc.get("normative_md", ""),
-                             sc.get("exceptions_md", ""))).lower()
+                             sc.get("items_md", ""))).lower()
         score = haystack.count(needle) * 2
         if needle in title.lower() or needle in pl_title.lower():
             score += 5
@@ -1458,7 +1600,7 @@ def search(query: str) -> str:
 
     total = sum(len(b) for b in buckets.values())
     elapsed_ms = (time.time() - started_at) * 1000
-    lines = [f'# Search: "{query}" — {total} matches ({elapsed_ms:.0f}ms)']
+    lines = [f'# Search: "{query}" — {total} matches ({elapsed_ms:.0f}ms)', _source("search")]
 
     for kind, (icon, heading) in _SEARCH_HEADINGS.items():
         if not buckets[kind]:
@@ -1542,7 +1684,7 @@ def graph_query(entity: str = "") -> str:
     ntype = node_data.get("type", "?")
     _title = _graph_title(node_id)
     _head = f"{_graph_short(node_id)} — {_title}" if _title else _graph_short(node_id)
-    lines = [f"# {_head} ({ntype})"]
+    lines = [f"# {_head} ({ntype})", _source("graph")]
 
     if ntype == "sc":
         lines.append(f"**Poziom:** {node_data.get('level', '')}")
@@ -1910,8 +2052,13 @@ def main():
                         help="API key for authentication. Also read from WCAG22_API_KEY env var.")
     args = parser.parse_args()
 
-    # Resolve API key: arg > env var > no auth
-    api_key = args.api_key or os.environ.get("WCAG22_API_KEY", "")
+    # Klucze: --api-key / WCAG22_API_KEY (etykieta "default") oraz
+    # WCAG22_API_KEYS="etykieta:klucz,..." (etykieta trafia do logu). Brak kluczy = brak auth.
+    try:
+        api_keys = parse_api_keys(args.api_key or os.environ.get("WCAG22_API_KEY", ""),
+                                  os.environ.get("WCAG22_API_KEYS", ""))
+    except ValueError as e:
+        parser.error(str(e))
 
     def banner(line):
         """
@@ -1932,8 +2079,9 @@ def main():
     banner(f"  Transport: {args.transport}  |  Log: {log_target}")
     for _line in _subsystem_status_lines():
         banner(f"  {_line}")
-    if api_key:
-        banner("  🔒 API key: włączony (klient musi wysłać nagłówek X-API-Key)")
+    if api_keys:
+        banner(f"  🔒 API key: włączony, kluczy: {len(api_keys)} "
+               f"({', '.join(sorted(set(api_keys.values())))}); nagłówek X-API-Key")
     else:
         banner("  🔓 API key: wyłączony — serwer jest otwarty")
     banner("=" * 72)
@@ -1947,9 +2095,11 @@ def main():
         class NoBufferMiddleware(BaseHTTPMiddleware):
             async def dispatch(self, request, call_next):
                 # Check API key for SSE
-                if api_key:
+                if api_keys:
                     request_key = request.headers.get("x-api-key", "")
-                    if request_key != api_key:
+                    client = match_api_key(request_key, api_keys)
+                    request.scope["wcag_client"] = client
+                    if client is None:
                         from starlette.responses import JSONResponse
                         log.warning(f"  🔒 ODRZUCONE (401) | {_fmt_ts()} | SSE | {request.client.host if request.client else '?'}")
                         return JSONResponse(
@@ -1971,7 +2121,7 @@ def main():
         import uvicorn
         raw_app = mcp.streamable_http_app()
         # Kolejność: API key (zewnętrzna) → logowanie → aplikacja MCP
-        app = APIKeyMiddleware(MCPLogMiddleware(raw_app), api_key)
+        app = APIKeyMiddleware(MCPLogMiddleware(raw_app), api_keys)
         banner(f"  Nasłuch: http://{args.host}:{args.port}/mcp")
         uvicorn.run(app, host=args.host, port=args.port, log_level="info")
 

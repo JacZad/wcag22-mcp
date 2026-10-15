@@ -97,7 +97,8 @@ def build():
         parts = [
             sc.get("title", ""),
             strip_markdown(sc.get("normative_md", "")),
-            strip_markdown(sc.get("exceptions_md", "")),
+            strip_markdown(sc.get("items_md", "")),
+            strip_markdown(" ".join(sc.get("notes", []))),
             strip_markdown(sc.get("understanding_short_md", "")),
         ]
         text = "\n".join(p for p in parts if p)

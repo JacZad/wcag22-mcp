@@ -115,6 +115,75 @@ def _fix_w3c_links(md):
     return md
 
 
+def _pandoc_str(html):
+    """Convert an HTML fragment to Markdown via pandoc."""
+    r = subprocess.run(
+        ["pandoc", "-f", "html", "-t", "markdown", "--wrap=preserve"],
+        input=html, capture_output=True, text=True, encoding="utf-8", timeout=30
+    )
+    if r.returncode != 0:
+        print(f"  ⚠ pandoc error: {r.stderr[:200]}", file=sys.stderr)
+        return ""
+    md = r.stdout.strip().replace("\\'", "'").replace('\\"', '"')
+    return _fix_w3c_links(md)
+
+
+_NOTE_RE = re.compile(r'<(p|div)\s+class="note"[^>]*>.*?</\1>', re.S)
+
+
+def _list_kind(lead):
+    """
+    Jak czytać listę pod zdaniem wiodącym kryterium.
+
+    Pandoc oddaje każdą <dl> tak samo, więc dawniej wszystko lądowało jako
+    "Exceptions" — a w 2.2.2 to warunki łączne (AND), w 3.3.8 alternatywy (OR),
+    w 1.4.11 zakres (każdy punkt to osobny wymóg). Agent czytał to jako wyjątki.
+    """
+    low = " ".join(lead.lower().split())
+    if "all of the following" in low or "the following are true" in low:
+        return "all"
+    if "at least one of the following" in low:
+        return "any"
+    if re.search(r"\bexcept\b", low):
+        return "exceptions"
+    return "each"
+
+
+def _parse_sc_html(html):
+    """Rozbij plik kryterium na zdanie wiodące, listę z jej typem i uwagi."""
+    m = re.search(r'<section[^>]*class="sc[^"]*"[^>]*>(.*)</section>', html, re.S)
+    inner = m.group(1) if m else html
+    removed = "obsolete" in html[:300] or "This criterion no longer has utility" in html
+    inner = re.sub(r'<h4>.*?</h4>', '', inner, flags=re.S)
+    inner = re.sub(r'<p class="(conformance-level|change)">.*?</p>', '', inner, flags=re.S)
+
+    dl = re.search(r'<dl>(.*?)</dl>', inner, re.S)
+    before, after = (inner[:dl.start()], inner[dl.end():]) if dl else (inner, "")
+    notes = [n.group(0) for n in _NOTE_RE.finditer(before + after)]
+    lead_html = _NOTE_RE.sub('', before)
+    tail_html = _NOTE_RE.sub('', after).strip()
+
+    lead = _pandoc_str(lead_html)
+    items = []
+    if dl:
+        for dt, dd in re.findall(r'<dt[^>]*>(.*?)</dt>\s*<dd[^>]*>(.*?)</dd>', dl.group(1), re.S):
+            items.append({"label": _pandoc_str(dt), "text": _pandoc_str(dd)})
+    if tail_html:
+        lead = (lead + "\n\n" + _pandoc_str(tail_html)).strip()
+    notes_md = [re.sub(r'^:::+.*$', '', _pandoc_str(n), flags=re.M).strip() for n in notes]
+
+    kind = _list_kind(lead) if items else ""
+    items_md = "\n\n".join(f"{it['label']}\n: {it['text']}" for it in items)
+    return {
+        "normative_md": lead,
+        "list_kind": kind,
+        "items": items,
+        "items_md": items_md,
+        "notes": [n for n in notes_md if n],
+        "removed": removed,
+    }
+
+
 # ── builders ──
 
 def build_scs(sc_map):
@@ -129,49 +198,10 @@ def build_scs(sc_map):
         else:
             continue
         
-        md = _pandoc(fpath)
-        if not md:
+        parsed = _parse_sc_html(fpath.read_text(encoding="utf-8"))
+        if parsed is None:
             continue
-        
-        # Clean up: remove the outer fenced div with section class
-        # Keep the content but strip the enclosing ::: block
-        md = re.sub(r'^:::.*?sc.*\n', '', md, count=1)
-        md = re.sub(r'\n:::$', '', md)
-        
-        # Split the SC into normative text and exceptions.
-        #
-        # Pandoc renders the exceptions as a definition list: the label sits on
-        # its own line and the body below it starts with ": ". The previous
-        # version looked for a trailing colon to spot the label — but it is the
-        # normative sentence that usually ends in one ("except for the
-        # following:"), so 17 criteria lost their normative text to the
-        # exceptions block, and 1.1.1 swallowed its exceptions the other way.
-        # The definition marker is unambiguous, so we cut on that instead.
-        lines = [ln for ln in md.split('\n') if ln.strip() != ':::']
 
-        level_idx = next((i for i, ln in enumerate(lines)
-                          if ln.strip() in ("A", "AA", "AAA")), None)
-        body = lines[level_idx + 1:] if level_idx is not None else lines
-
-        # Kryteria wycofane (4.1.1) nie mają wiersza z poziomem, więc zostaje im
-        # nagłówek tytułowy — tytuł trzymamy osobno, tu jest zbędny.
-        while body and (not body[0].strip() or body[0].lstrip().startswith("#")):
-            body = body[1:]
-
-        def_idx = next((i for i, ln in enumerate(body) if re.match(r'^:\s', ln)), None)
-
-        if def_idx is None:
-            normative_parts, exception_parts = body, []
-        else:
-            # Etykieta wyjątku to ostatni niepusty wiersz przed treścią definicji.
-            label_idx = def_idx - 1
-            while label_idx >= 0 and not body[label_idx].strip():
-                label_idx -= 1
-            if label_idx < 0:
-                label_idx = def_idx
-            normative_parts = body[:label_idx]
-            exception_parts = body[label_idx:]
-        
         scs[sc_id] = {
             "id": sc_id,
             "slug": slug,
@@ -180,8 +210,7 @@ def build_scs(sc_map):
             "version": f"WCAG 2.{ver[-1]}",
             "principle": principle,
             "guideline": guideline,
-            "normative_md": _fix_w3c_links('\n'.join(normative_parts).strip()),
-            "exceptions_md": _fix_w3c_links('\n'.join(exception_parts).strip()) if exception_parts else "",
+            **parsed,
             "w3c_url": f"https://www.w3.org/WAI/WCAG22/Understanding/{slug}"
         }
     
