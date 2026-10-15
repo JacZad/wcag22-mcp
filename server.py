@@ -702,12 +702,13 @@ try:
             if term_lower in md:
                 G.add_edge("T:" + tid, dnode, relation="references")
 
-    # Edge: SC → definition. Bierzemy też exceptions_md, bo dla 17 kryteriów
-    # to tam wylądowała treść normatywna (błąd podziału w build_data.py).
+    # Edge: SC → definition. Treść normatywna to zdanie wiodące plus lista
+    # warunków/wyjątków (items_md); uwagi też bywają źródłem terminów.
     def _sc_haystack(sc):
         return " ".join((
             sc.get("normative_md", ""),
-            sc.get("exceptions_md", ""),
+            sc.get("items_md", ""),
+            " ".join(sc.get("notes", [])),
             sc.get("understanding_full_md", ""),
         )).lower()
 
@@ -801,6 +802,60 @@ def _resolve(identifier):
     return min(candidates)[1] if candidates else None
 
 
+# ─── Poziom źródła ───
+#
+# Agenci mieszali normę z Understanding, technikami i APG — np. brali wzorzec
+# APG (pętla fokusu w modalu) albo przykład z Understanding za wymóg WCAG.
+# Każda odpowiedź mówi więc wprost, z jakiego poziomu pochodzi.
+
+SOURCE_LABELS = {
+    "wcag": "📜 Source: WCAG 2.2 Recommendation — NORMATIVE (the requirement itself).",
+    "glossary": "📜 Source: WCAG 2.2 glossary — NORMATIVE (defined terms are part of the requirements; notes and examples are informative).",
+    "understanding": "📘 Source: Understanding WCAG 2.2 — INFORMATIVE. Explains intent; does not add, remove or extend requirements.",
+    "understanding_summary": "📘 Source: summary of Understanding WCAG 2.2 prepared for this server — INFORMATIVE. Quote the normative text from get() when stating a failure.",
+    "techniques": "🔧 Source: Techniques for WCAG 2.2 — INFORMATIVE. Sufficient/advisory techniques are one way to pass; not using one is NOT a failure. A failure (F) documents one way to fail the criteria it lists.",
+    "pattern": "🧩 Source: WAI-ARIA Authoring Practices (APG) + server notes — INFORMATIVE, NOT a WCAG requirement. Deviating from APG is not by itself a WCAG failure; report against a WCAG criterion only when its normative text is not met.",
+    "calc": "🧮 Source: calculation by this server using the WCAG 2.2 formulas (contrast ratio, relative luminance).",
+    "graph": "🕸 Source: relation graph derived from W3C data — navigation aid, not normative.",
+    "search": "🔎 Search results mix levels: SC = normative, Understanding/techniques = informative. Open the item with get()/get_technique() before citing it.",
+}
+
+
+TECH_TYPE_MEANING = {
+    "Failure": "a documented way to FAIL the criteria listed below",
+    "Technique": "a way to meet the criteria below (sufficient or advisory, depending on the criterion); not using it is NOT a failure",
+}
+
+
+def _indent(text, prefix):
+    """Wcięcie wierszy kontynuacji, żeby wielowierszowy punkt nie rozbił listy."""
+    return text.replace("\n", "\n" + prefix)
+
+
+def _source(kind):
+    return f"*{SOURCE_LABELS[kind]}*"
+
+
+LIST_KIND_HEADINGS = {
+    "all": "Conditions — ALL must be true (AND)",
+    "any": "Conditions — AT LEAST ONE must be true (OR)",
+    "exceptions": "Exceptions — the criterion does not apply when ANY of these holds (closed list)",
+    "each": "Scope — each item is a separate requirement; all of them apply",
+}
+
+LIST_KIND_HINTS = {
+    "all": "⚠️ Failing any single condition fails the criterion.",
+    "any": "⚠️ Content passes if one condition is met; it fails only when none is met.",
+    "exceptions": "⚠️ These are the only exceptions in the normative text. Do not add others (e.g. from Understanding examples or intuition).",
+}
+
+REMOVED_SC_NOTE = (
+    "⚠️ **Obsolete and removed in WCAG 2.2.** Do not report failures of this "
+    "criterion under WCAG 2.2. Under WCAG 2.0/2.1 the 2023 errata treat it as "
+    "always satisfied for content using HTML or XML."
+)
+
+
 def _snippet(text, query, max_len=150):
     if not text:
         return ""
@@ -829,7 +884,13 @@ mcp = FastMCP(
         "first, e.g. 'tekst alternatywny dla obrazków' -> search('alt text images'). "
         "Reply to the user in their own language. Success criteria can be given "
         "by ID (1.4.3), slug or title; use search() to find a criterion from a "
-        "description."
+        "description. "
+        "Every answer starts with its source level: WCAG normative text, "
+        "Understanding/techniques (informative) or APG patterns (informative, "
+        "not WCAG). Base a failure only on normative text from get(); respect "
+        "whether its list is AND, OR, exceptions or scope, and never add "
+        "exceptions that get() does not list. A failure technique (F) may map "
+        "to several criteria — check get_technique(id, sc=...) before citing."
     ),
     json_response=True,
     # Bez tego FastMCP trzyma sesję w pamięci instancji. Na Cloud Run przy
@@ -869,16 +930,25 @@ def get(identifier: str) -> str:
         title_line += f"  |  {pl_title}"
     lines = [
         title_line,
-        f"**Level:** {sc.get('level', '')}  **Version:** {sc.get('version', '')}",
-        f"**Principle:** {sc.get('principle', '')}  **Guideline:** {sc.get('guideline', '')}",
+        _source("wcag"),
         "",
-        "## Normative Text",
-        sc.get('normative_md', ''),
+        f"**Level:** {sc.get('level', '')}  **Added in:** {sc.get('version', '')}",
+        f"**Principle:** {sc.get('principle', '')}  **Guideline:** {sc.get('guideline', '')}",
     ]
-    if sc.get('exceptions_md'):
-        lines.append("")
-        lines.append("## Exceptions")
-        lines.append(sc['exceptions_md'])
+    if sc.get("removed"):
+        lines += ["", REMOVED_SC_NOTE]
+    if sc.get('normative_md'):
+        lines += ["", "## Normative Text", sc['normative_md']]
+    if sc.get("items"):
+        lines += ["", f"### {LIST_KIND_HEADINGS.get(sc.get('list_kind'), 'Items')}"]
+        for n, item in enumerate(sc["items"], 1):
+            lines.append(f"{n}. **{item['label']}** — {_indent(item['text'], '   ')}")
+        hint = LIST_KIND_HINTS.get(sc.get("list_kind"))
+        if hint:
+            lines += ["", hint]
+    if sc.get("notes"):
+        lines += ["", "## Notes (informative — not requirements)"]
+        lines += [f"- {_indent(note, '  ')}" for note in sc["notes"]]
     lines.append("")
     lines.append(f'💡 Objaśnienie i przykłady: get_understanding("{sc["id"]}")')
     lines.append(f'🔧 Techniki: get_techniques("{sc["id"]}")')
@@ -922,7 +992,7 @@ def get_definition(term: str) -> str:
         hint = f" Podobne hasła: {', '.join(near)}." if near else ""
         return f"Term '{term}' not found.{hint}"
 
-    lines = [f"## {defn['term']}", "", defn['definition_md']]
+    lines = [f"## {defn['term']}", _source("glossary"), "", defn['definition_md']]
     if defn.get('details'):
         lines.append("")
         lines.append("**Examples:**")
@@ -951,7 +1021,7 @@ def get_techniques(identifier: str, failures_only: bool = False) -> str:
     header = f"# Techniques for {title}"
     if pl_title:
         header += f"  |  {pl_title}"
-    header += "\n"
+    header += "\n" + _source("techniques") + "\n"
 
     tech_ids = INDEXES.get("tech_by_sc", {}).get(sc_id, [])
     failure_ids = INDEXES.get("failures_by_sc", {}).get(sc_id, [])
@@ -989,12 +1059,16 @@ def get_techniques(identifier: str, failures_only: bool = False) -> str:
 
 
 @mcp.tool()
-def get_technique(technique_id: str) -> str:
+def get_technique(technique_id: str, sc: str = "") -> str:
     """
-    Get the full content of a specific WCAG technique by its ID.
+    Get the full content of a specific WCAG technique by its ID, with its type
+    and ALL success criteria it relates to.
 
-    Examples: "G103", "H2", "F3", "ARIA14"
-    Returns the full technique description, applicability, examples, and tests.
+    A failure (F) often maps to several criteria (e.g. F78 → 1.4.11, 2.4.7,
+    2.4.13). Pass `sc` with the criterion you plan to cite and the tool warns
+    if the technique does not relate to it.
+
+    Examples: get_technique("G103"), get_technique("F78", sc="2.4.7")
     """
     tid = technique_id.strip()
     tech = TECHNIQUES.get(tid)
@@ -1008,14 +1082,37 @@ def get_technique(technique_id: str) -> str:
                 f"G18, H37, ARIA1, C45 or F78 — use get_techniques(\"<kryterium>\") "
                 f"to list the techniques for a success criterion.")
 
+    tech_type = tech.get('type', '').capitalize()
     lines = [
         f"# {tid}",
+        _source("techniques"),
+        "",
         f"**Category:** {tech.get('category', '')}",
-        f"**Type:** {tech.get('type', '')}",
+        f"**Type:** {tech_type} — {TECH_TYPE_MEANING.get(tech_type, '')}".rstrip(" —"),
         "",
     ]
-    if tech.get("applies_to"):
-        lines.append(f"**Applies to:** {', '.join(tech['applies_to'])}")
+    applies = tech.get("applies_to", [])
+    if applies:
+        lines.append(f"## Related success criteria ({len(applies)})")
+        for sc_id in applies:
+            s = SCS.get(sc_id, {})
+            lines.append(f"- **{sc_id}** {s.get('title', '')} ({s.get('level', '')})")
+        if tech_type == "Failure" and len(applies) > 1:
+            lines.append("")
+            lines.append(f"⚠️ This failure maps to {len(applies)} criteria. Cite each "
+                         f"one whose normative text is actually not met — check them "
+                         f"with get(), do not assume the first one.")
+        lines.append("")
+
+    if sc.strip():
+        wanted = _resolve(sc) or sc.strip()
+        if wanted not in applies:
+            lines.append(f"🚫 **Wrong criterion?** {tid} is not documented for {wanted}. "
+                         f"It relates to: {', '.join(applies) or 'no criterion'}. "
+                         f"Either cite one of those, or justify {wanted} from its own "
+                         f"normative text (get(\"{wanted}\")) without relying on {tid}.")
+        else:
+            lines.append(f"✅ {tid} is documented for {wanted}.")
         lines.append("")
 
     content = tech.get("content_md", "")
@@ -1051,6 +1148,7 @@ def check_contrast(foreground: str, background: str) -> str:
 
     return "\n".join([
         f"# Kontrast: {ratio:.2f}:1",
+        _source("calc"),
         "",
         "| | Kolor |",
         "|---|---|",
@@ -1132,7 +1230,7 @@ def get_understanding(identifier: str) -> str:
     if full_md:
         hint = (f"\n\nℹ️ Pełny dokument W3C ({len(full_md)} znaków) jest dostępny przez "
                 f"get_full_understanding — wywołuj go tylko na wyraźną prośbę użytkownika.")
-    return f"{heading} — streszczenie\n\n{short_md}{hint}\n\n📖 [Full understanding]({url})"
+    return f"{heading} — streszczenie\n{_source('understanding_summary')}\n\n{short_md}{hint}\n\n📖 [Full understanding]({url})"
 
 
 @mcp.tool()
@@ -1154,7 +1252,7 @@ def get_full_understanding(identifier: str) -> str:
     full_md = sc.get("understanding_full_md", "")
     if not full_md:
         return f"No understanding document for '{identifier}'."
-    return f"{heading}\n\n{full_md}\n\n📖 [Full understanding]({url})"
+    return f"{heading}\n{_source('understanding')}\n\n{full_md}\n\n📖 [Full understanding]({url})"
 
 
 def _principle(principle_id: str) -> str:
@@ -1162,7 +1260,7 @@ def _principle(principle_id: str) -> str:
     if not p:
         return f"Principle '{principle_id}' not found. Use 1-4."
 
-    lines = [f"# Principle {p['num']}: {p['title']}", ""]
+    lines = [f"# Principle {p['num']}: {p['title']}", _source("wcag"), ""]
 
     for gn in p.get("guidelines", []):
         g = GUIDELINES.get(gn, {})
@@ -1183,6 +1281,7 @@ def _guideline(guideline_id: str) -> str:
     p = PRINCIPLES.get(g.get("principle", ""), {})
     lines = [
         f"# Guideline {g['num']}: {g['title']}",
+        _source("wcag"),
         f"**Principle:** {g.get('principle', '')} — {p.get('title', '')}",
         "",
     ]
@@ -1255,6 +1354,7 @@ def get_pattern(name: str = "") -> str:
 
     lines = [
         f"# {pattern.get('name', pname)} — wzorzec deweloperski",
+        _source("pattern"),
         "",
     ]
 
@@ -1418,7 +1518,7 @@ def _search_fallback(query, started_at):
         title = sc.get("title", "")
         pl_title = SC_PL.get(sc_id, "")
         haystack = " ".join((title, pl_title, sc.get("normative_md", ""),
-                             sc.get("exceptions_md", ""))).lower()
+                             sc.get("items_md", ""))).lower()
         score = haystack.count(needle) * 2
         if needle in title.lower() or needle in pl_title.lower():
             score += 5
@@ -1500,7 +1600,7 @@ def search(query: str) -> str:
 
     total = sum(len(b) for b in buckets.values())
     elapsed_ms = (time.time() - started_at) * 1000
-    lines = [f'# Search: "{query}" — {total} matches ({elapsed_ms:.0f}ms)']
+    lines = [f'# Search: "{query}" — {total} matches ({elapsed_ms:.0f}ms)', _source("search")]
 
     for kind, (icon, heading) in _SEARCH_HEADINGS.items():
         if not buckets[kind]:
@@ -1584,7 +1684,7 @@ def graph_query(entity: str = "") -> str:
     ntype = node_data.get("type", "?")
     _title = _graph_title(node_id)
     _head = f"{_graph_short(node_id)} — {_title}" if _title else _graph_short(node_id)
-    lines = [f"# {_head} ({ntype})"]
+    lines = [f"# {_head} ({ntype})", _source("graph")]
 
     if ntype == "sc":
         lines.append(f"**Poziom:** {node_data.get('level', '')}")
