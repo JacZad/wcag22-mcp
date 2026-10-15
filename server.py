@@ -117,13 +117,14 @@ def _result_text(resp_bytes):
     return text, bool(result.get("isError"))
 
 
-def log_call(remote, user_agent, tool_name, tool_args, elapsed_ms, resp_bytes, status, total_bytes=None):
+def log_call(remote, user_agent, tool_name, tool_args, elapsed_ms, resp_bytes, status, total_bytes=None, client=""):
     """Zapisz jeden rekord JSONL dla wywołania narzędzia."""
     text, is_error = _result_text(resp_bytes)
     rec = {
         "ts": datetime.now(timezone.utc).isoformat(timespec="milliseconds"),
         "ip": remote,
         "ua": user_agent,
+        "client": client,
         "tool": tool_name,
         "args": {k: _trunc(v, 500) for k, v in (tool_args or {}).items()},
         "ms": elapsed_ms,
@@ -162,7 +163,7 @@ def _format_size(text):
     return f"{n/1024:.1f} KB"
 
 
-def log_request(remote, method, params, tool_name, tool_args, body_preview):
+def log_request(remote, method, params, tool_name, tool_args, body_preview, client=""):
     """Zaloguj przychodzące żądanie."""
     ts = _fmt_ts()
     lines = []
@@ -180,6 +181,8 @@ def log_request(remote, method, params, tool_name, tool_args, body_preview):
 
     if remote:
         lines.append(f"  Źródło:       {remote}")
+    if client:
+        lines.append(f"  Klient:       {client}")
 
     lines.append("-" * 72)
 
@@ -211,16 +214,54 @@ def log_response(tool_name, elapsed_ms, content, error=None, truncated=False):
 
 # ─── API key middleware ───
 
+def parse_api_keys(single: str = "", multi: str = "") -> dict:
+    """
+    Zbuduj słownik {klucz: etykieta klienta}.
+
+    single — pojedynczy klucz (WCAG22_API_KEY / --api-key), etykieta "default".
+    multi  — lista "etykieta:klucz" rozdzielona przecinkami (WCAG22_API_KEYS),
+             np. "jacek:abc123,zespol-a:def456". Etykieta trafia do logu.
+    """
+    keys = {}
+    if single:
+        keys[single] = "default"
+    for item in multi.split(","):
+        item = item.strip()
+        if not item:
+            continue
+        label, sep, key = item.partition(":")
+        label, key = label.strip(), key.strip()
+        if not sep or not label or not key:
+            raise ValueError(f"WCAG22_API_KEYS: oczekiwano 'etykieta:klucz', jest {_trunc(label, 20)!r}")
+        if key in keys:
+            raise ValueError(f"WCAG22_API_KEYS: klucz etykiety {label!r} powtarza się")
+        keys[key] = label
+    return keys
+
+
+def match_api_key(request_key: str, keys: dict):
+    """Etykieta klienta dla podanego klucza albo None. Porównuje ze wszystkimi kluczami w stałym czasie."""
+    rk = request_key.encode("utf-8")
+    found = None
+    for key, label in keys.items():
+        # compare_digest zamiast == — bez wycieku informacji o zgodnych znakach.
+        if hmac.compare_digest(rk, key.encode("utf-8")):
+            found = label
+    return found
+
+
 class APIKeyMiddleware:
     """
     ASGI middleware sprawdzający nagłówek X-API-Key.
-    Jeśli klucz nie pasuje — zwraca 401.
-    Jeśli klucz jest pusty (brak zabezpieczenia) — przepuszcza bez sprawdzenia.
+    Jeśli klucz nie pasuje do żadnego z kluczy — zwraca 401.
+    Jeśli nie ma żadnego klucza (brak zabezpieczenia) — przepuszcza bez sprawdzenia.
+    Etykietę rozpoznanego klucza zapisuje w scope["wcag_client"] (trafia do calls.jsonl).
     """
 
-    def __init__(self, app, api_key: str):
+    def __init__(self, app, keys):
         self.app = app
-        self.api_key = api_key
+        # Dla zgodności: pojedynczy klucz jako string.
+        self.keys = parse_api_keys(keys) if isinstance(keys, str) else dict(keys)
 
     async def __call__(self, scope, receive, send):
         # Skip non-HTTP (WebSocket, etc.)
@@ -229,7 +270,7 @@ class APIKeyMiddleware:
             return
 
         # Jeśli nie ustawiono klucza — przepuść bez sprawdzania
-        if not self.api_key:
+        if not self.keys:
             await self.app(scope, receive, send)
             return
 
@@ -237,9 +278,8 @@ class APIKeyMiddleware:
         headers = dict(scope.get("headers", []))
         request_key = headers.get(b"x-api-key", b"").decode("utf-8", "replace")
 
-        # compare_digest zamiast != — stały czas porównania, bez wycieku
-        # informacji o tym, ile znaków klucza się zgadza.
-        if not hmac.compare_digest(request_key.encode("utf-8"), self.api_key.encode("utf-8")):
+        client = match_api_key(request_key, self.keys)
+        if client is None:
             log.warning(f"  🔒 ODRZUCONE (401)  |  {_fmt_ts()}  |  podany klucz: {_trunc(request_key, 20)}")
             body = json.dumps({
                 "error": "Unauthorized",
@@ -260,6 +300,7 @@ class APIKeyMiddleware:
             })
             return
 
+        scope["wcag_client"] = client
         await self.app(scope, receive, send)
 
 
@@ -316,7 +357,8 @@ class MCPLogMiddleware:
                 pass
 
         # Log request
-        log_request(remote, method, params, tool_name, tool_args, "")
+        client = scope.get("wcag_client", "")
+        log_request(remote, method, params, tool_name, tool_args, "", client)
 
         # Odtwórz receive dla wewnętrznej aplikacji
         body_sent = False
@@ -378,13 +420,13 @@ class MCPLogMiddleware:
             elapsed_ms = int((time.time() - start) * 1000)
             log_response(tool_name, elapsed_ms, "", error=str(e))
             if tool_name:
-                log_call(remote, user_agent, tool_name, tool_args, elapsed_ms, b"", 500)
+                log_call(remote, user_agent, tool_name, tool_args, elapsed_ms, b"", 500, client=client)
             raise
 
         elapsed_ms = int((time.time() - start) * 1000)
         if tool_name:
             log_call(remote, user_agent, tool_name, tool_args, elapsed_ms,
-                     b"".join(response_chunks), status, response_bytes)
+                     b"".join(response_chunks), status, response_bytes, client)
         resp_text = b"".join(response_chunks)[:_LOG_BODY_LIMIT].decode("utf-8", errors="replace")
         log_response(tool_name, elapsed_ms, resp_text, error=None,
                      truncated=response_bytes > _LOG_BODY_LIMIT)
@@ -1910,8 +1952,13 @@ def main():
                         help="API key for authentication. Also read from WCAG22_API_KEY env var.")
     args = parser.parse_args()
 
-    # Resolve API key: arg > env var > no auth
-    api_key = args.api_key or os.environ.get("WCAG22_API_KEY", "")
+    # Klucze: --api-key / WCAG22_API_KEY (etykieta "default") oraz
+    # WCAG22_API_KEYS="etykieta:klucz,..." (etykieta trafia do logu). Brak kluczy = brak auth.
+    try:
+        api_keys = parse_api_keys(args.api_key or os.environ.get("WCAG22_API_KEY", ""),
+                                  os.environ.get("WCAG22_API_KEYS", ""))
+    except ValueError as e:
+        parser.error(str(e))
 
     def banner(line):
         """
@@ -1932,8 +1979,9 @@ def main():
     banner(f"  Transport: {args.transport}  |  Log: {log_target}")
     for _line in _subsystem_status_lines():
         banner(f"  {_line}")
-    if api_key:
-        banner("  🔒 API key: włączony (klient musi wysłać nagłówek X-API-Key)")
+    if api_keys:
+        banner(f"  🔒 API key: włączony, kluczy: {len(api_keys)} "
+               f"({', '.join(sorted(set(api_keys.values())))}); nagłówek X-API-Key")
     else:
         banner("  🔓 API key: wyłączony — serwer jest otwarty")
     banner("=" * 72)
@@ -1947,9 +1995,11 @@ def main():
         class NoBufferMiddleware(BaseHTTPMiddleware):
             async def dispatch(self, request, call_next):
                 # Check API key for SSE
-                if api_key:
+                if api_keys:
                     request_key = request.headers.get("x-api-key", "")
-                    if request_key != api_key:
+                    client = match_api_key(request_key, api_keys)
+                    request.scope["wcag_client"] = client
+                    if client is None:
                         from starlette.responses import JSONResponse
                         log.warning(f"  🔒 ODRZUCONE (401) | {_fmt_ts()} | SSE | {request.client.host if request.client else '?'}")
                         return JSONResponse(
@@ -1971,7 +2021,7 @@ def main():
         import uvicorn
         raw_app = mcp.streamable_http_app()
         # Kolejność: API key (zewnętrzna) → logowanie → aplikacja MCP
-        app = APIKeyMiddleware(MCPLogMiddleware(raw_app), api_key)
+        app = APIKeyMiddleware(MCPLogMiddleware(raw_app), api_keys)
         banner(f"  Nasłuch: http://{args.host}:{args.port}/mcp")
         uvicorn.run(app, host=args.host, port=args.port, log_level="info")
 

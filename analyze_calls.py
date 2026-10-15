@@ -49,6 +49,16 @@ def main():
         print(f"  {tool:24} {len(rs):5}  chybienia {miss:4} ({miss/len(rs):.0%})  "
               f"{int(statistics.median(ms)):5}/{p95:<6} {size:7}")
 
+    # Rekordy sprzed obsługi wielu kluczy nie mają pola client.
+    print("\n== Klienci (etykieta klucza API): wywołania, chybienia, narzędzia")
+    by_client = defaultdict(list)
+    for r in recs:
+        by_client[r.get("client") or "(brak)"].append(r)
+    for name, rs in sorted(by_client.items(), key=lambda kv: -len(kv[1])):
+        tools = Counter(r["tool"] for r in rs).most_common(3)
+        print(f"  {name:20} {len(rs):5}  chybienia {sum(is_miss(r) for r in rs):4}  "
+              + ", ".join(f"{t} {n}" for t, n in tools))
+
     print("\n== Chybione wywołania (co model wpisał, a nie zadziałało)")
     misses = Counter((r["tool"], json.dumps(r["args"], ensure_ascii=False)) for r in recs if is_miss(r))
     for (tool, args), n in misses.most_common(25):
@@ -61,10 +71,10 @@ def main():
 
     # Sekwencje: po czym model sięga do kolejnego narzędzia. Dużo
     # search → search albo get → get(not found) znaczy, że opis nie wystarcza.
-    print("\n== Częste sekwencje narzędzi w jednej rozmowie (klient = ip + user-agent)")
+    print("\n== Częste sekwencje narzędzi w jednej rozmowie (klient = ip + user-agent + etykieta klucza)")
     clients = defaultdict(list)
     for r in recs:
-        clients[(r["ip"], r["ua"])].append(r)
+        clients[(r["ip"], r["ua"], r.get("client", ""))].append(r)
     pairs = Counter()
     for rs in clients.values():
         for a, b in zip(rs, rs[1:]):
