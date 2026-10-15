@@ -2,7 +2,7 @@
 
 Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/), wersjonowanie według [SemVer](https://semver.org/lang/pl/). Do wersji 1.0 zmiana drugiej cyfry może oznaczać niekompatybilne zmiany w narzędziach.
 
-## [Niewydane]
+## [0.3.0] — 2026-10-15
 
 ### Dodane
 
@@ -13,6 +13,7 @@ Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/), wersj
 ### Usunięte
 
 - Wdrożenie na Google Cloud Run (`deploy-cloudrun.sh`, `cloudbuild.yaml`, `.gcloudignore`). Serwer działa tylko na Mikrusie (`deploy-mikrus.sh`).
+- Wykrywanie środowiska Cloud Run w `server.py` (`K_SERVICE`). Logi zawsze trafiają do pliku, ostrzeżenia na stderr.
 
 ### Naprawione
 
@@ -64,5 +65,6 @@ Pierwsza wersja wdrożona na Cloud Run.
 - Transporty stdio, SSE i streamable-http, opcjonalna ochrona kluczem API.
 - Obraz Docker dla Cloud Run z testem dymnym w pipeline.
 
+[0.3.0]: https://github.com/JacZad/wcag22-mcp/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/JacZad/wcag22-mcp/compare/14d84ad...v0.2.0
 [0.1.0]: https://github.com/JacZad/wcag22-mcp/commit/14d84ad

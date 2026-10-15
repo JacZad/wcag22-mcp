@@ -4,7 +4,7 @@ Serwer MCP (Model Context Protocol) z pełną bazą wiedzy WCAG 2.2 — kryteria
 
 Umożliwia asystentom AI (Hermes, Claude Code, Cursor, Copilot i inne) udzielanie precyzyjnych odpowiedzi na pytania o dostępność cyfrową bez halucynacji — dane pochodzą bezpośrednio ze specyfikacji W3C.
 
-**Wersja:** 0.2.0 — zmiany opisuje [CHANGELOG.md](CHANGELOG.md). Wersja 0.2.0 zmieniła nazwy części narzędzi; tabela przejścia jest w changelogu.
+**Wersja:** 0.3.0 — zmiany opisuje [CHANGELOG.md](CHANGELOG.md). Wersja 0.2.0 zmieniła nazwy części narzędzi; tabela przejścia jest w changelogu.
 
 ---
 
@@ -34,7 +34,8 @@ Umożliwia asystentom AI (Hermes, Claude Code, Cursor, Copilot i inne) udzielani
 
 | Funkcja | Opis |
 |---|---|
-| **87 kryteriów sukcesu** | Wszystkie SC WCAG 2.2 (A, AA, AAA) z pełnym tekstem normatywnym |
+| **87 kryteriów sukcesu** | Wszystkie SC WCAG 2.2 (A, AA, AAA) z pełnym tekstem normatywnym; typ listy warunków (łączne AND, alternatywy OR, zamknięta lista wyjątków, zakres), uwagi oznaczone jako informacyjne, 4.1.1 oznaczone jako usunięte |
+| **Etykiety źródła** | Każda odpowiedź mówi, czy pochodzi z normy (normatywna), czy z materiałów informacyjnych (Understanding, techniki, APG, obliczenia, graf, wyszukiwanie) |
 | **450+ technik** | Techniki wystarczające, zalecane i błędów (G, H, F, ARIA, C, SCR, SVR, PDF, SM, T); bez przestarzałych technik Flash i Silverlight |
 | **101 definicji** | Słownik terminów WCAG z objaśnieniami i przykładami |
 | **Objaśnienia (Understanding)** | Dla każdego SC streszczenie (1–4 KB: cel, rozróżnienia, wyjątki, typowe błędy) oraz pełny dokument W3C na żądanie |
@@ -183,7 +184,7 @@ Serwer udostępnia następujące narzędzia MCP:
 | `get(identifier)` | Zasada (`"1"`), wytyczna (`"2.4"`) lub kryterium sukcesu (`"1.1.1"`, `"non-text-content"`, `"kontrast"`) |
 | `get_definition(term)` | Definicja terminu WCAG (np. `"assistive technology"`) |
 | `get_techniques(identifier, failures_only)` | Techniki i błędy dla SC; `failures_only=True` — tylko błędy |
-| `get_technique(technique_id)` | Pełna treść techniki (np. `"G18"`, `"H37"`, `"F3"`) |
+| `get_technique(technique_id, sc)` | Pełna treść techniki (np. `"G18"`, `"H37"`, `"F3"`) z listą wszystkich kryteriów; z `sc` ostrzega, gdy technika nie dotyczy podanego kryterium |
 | `get_understanding(identifier)` | Streszczenie dokumentu Understanding dla SC (domyślnie) |
 | `get_full_understanding(identifier)` | Pełny dokument Understanding W3C (5–40 KB) — tylko na wyraźną prośbę |
 | `list_scs(level)` | Lista SC, opcjonalnie filtrowana (`"A"`, `"AA"`, `"AAA"`) |
@@ -452,7 +453,10 @@ curl -X POST http://127.0.0.1:9100/mcp \
 ├── understanding_summaries.md # Streszczenia dokumentów Understanding (źródło dla get_understanding)
 ├── apply_summaries.py   # Wgrywa streszczenia do wcag-data.json bez pełnej przebudowy
 ├── build_search_index.py # Skrypt budujący indeks FTS5
-├── smoke_test.py        # Test dymny wszystkich narzędzi (uruchamiany w Cloud Build)
+├── smoke_test.py        # Test dymny wszystkich narzędzi
+├── test_normative.py    # Test struktury kryteriów (AND/OR/wyjątki, 4.1.1, etykiety źródła)
+├── test_api_keys.py     # Test kluczy API z etykietami klientów
+├── deploy-mikrus.sh     # Wdrożenie na VPS Mikrus
 ├── embeddings/
 │   └── search.db        # Baza SQLite FTS5 — jedyny plik używany w czasie działania
 ├── patterns.json        # Definicje wzorców ARIA APG
@@ -469,6 +473,7 @@ Dane są commitowane gotowe, więc przebudowa jest potrzebna tylko po zmianie ź
 python3 build_data.py           # wcag-data.json ze źródeł W3C + streszczenia Understanding
 python3 build_search_index.py   # embeddings/search.db
 python3 smoke_test.py           # test dymny wszystkich narzędzi
+python3 test_normative.py       # struktura kryteriów i etykiety źródła
 ```
 
 Po zmianie samych streszczeń w `understanding_summaries.md` wystarczy:
