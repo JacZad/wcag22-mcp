@@ -8,7 +8,6 @@ __pycache__/
 *.md
 AGENTS.md
 Dockerfile
-cloudbuild.yaml
 README.md
 wcag-html/*.html
 
@@ -27,7 +26,6 @@ understanding_summaries.md
 sc_map.py
 categories-en.json
 patterns.json
-deploy-cloudrun.sh
 deploy-mikrus.sh
 uv.lock
 pyproject.toml

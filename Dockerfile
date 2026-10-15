@@ -1,4 +1,4 @@
-# Dockerfile dla WCAG 2.2 MCP Server — Google Cloud Run
+# Dockerfile dla WCAG 2.2 MCP Server (wdrożenie: deploy-mikrus.sh)
 FROM python:3.12-slim
 
 ENV PYTHONUNBUFFERED=1 \
@@ -17,7 +17,7 @@ COPY wcag-data.json .
 # Indeks FTS5 — bez niego search() spada do trybu awaryjnego
 COPY embeddings/search.db ./embeddings/search.db
 
-# Serwer niczego nie zapisuje: w Cloud Run logi idą na stderr.
+# Logi trafiają do katalogu montowanego z hosta (patrz deploy-mikrus.sh).
 RUN useradd --create-home --uid 10001 app && chown -R app:app /app
 USER app
 

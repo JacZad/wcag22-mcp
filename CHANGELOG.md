@@ -10,6 +10,10 @@ Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/), wersj
 - `get_technique(id, sc="")` — lista wszystkich kryteriów techniki, znaczenie typu i ostrzeżenie, gdy błąd (F) dotyczy kilku kryteriów; z `sc` ostrzega przed „złym kryterium”.
 - `test_normative.py` — test regresyjny struktury spornych kryteriów (2.2.2, 3.3.8, 1.4.11, 2.5.8, 4.1.1…).
 
+### Usunięte
+
+- Wdrożenie na Google Cloud Run (`deploy-cloudrun.sh`, `cloudbuild.yaml`, `.gcloudignore`). Serwer działa tylko na Mikrusie (`deploy-mikrus.sh`).
+
 ### Naprawione
 
 - Lista `<dl>` w treści kryterium nie jest już zawsze „Exceptions”. `get()` podaje jej typ: warunki łączne (AND, np. 2.2.2), alternatywy (OR, np. 3.3.8), zamknięta lista wyjątków (2.5.8) albo zakres (1.4.11). Uwagi (Notes) są osobno i oznaczone jako informacyjne, znacznik „New” nie trafia do treści, 4.1.1 ma flagę `removed` z ostrzeżeniem.
