@@ -29,7 +29,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 # Wersja serwera — trzymaj w zgodzie z pyproject.toml i CHANGELOG.md.
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 try:
     from mcp.server.fastmcp import FastMCP
@@ -439,6 +439,13 @@ COUNTS = DATA["counts"]
 CATEGORIES = DATA.get("categories", {})
 PATTERNS = DATA.get("patterns", {})
 
+# WAI-ARIA 1.2 (build_aria.py). Optional, so the server still starts without it.
+ARIA_PATH = Path(__file__).parent / "aria-data.json"
+ARIA = {"roles": {}, "attributes": {}, "counts": {}}
+if ARIA_PATH.exists():
+    with open(ARIA_PATH, encoding="utf-8") as f:
+        ARIA = json.load(f)
+
 # ── Load search index (FTS5) ──
 INDEX_DIR = Path(__file__).parent / "embeddings"
 EMB_DIR = INDEX_DIR  # zachowana stara nazwa dla zgodności
@@ -805,9 +812,10 @@ SOURCE_LABELS = {
     "understanding_summary": "📘 Source: summary of Understanding WCAG 2.2 prepared for this server — INFORMATIVE. Quote the normative text from get() when stating a failure.",
     "techniques": "🔧 Source: Techniques for WCAG 2.2 — INFORMATIVE. Sufficient/advisory techniques are one way to pass; not using one is NOT a failure. A failure (F) documents one way to fail the criteria it lists.",
     "pattern": "🧩 Source: WAI-ARIA Authoring Practices (APG) + server notes — INFORMATIVE, NOT a WCAG requirement. Deviating from APG is not by itself a WCAG failure; report against a WCAG criterion only when its normative text is not met.",
-    "calc": "🧮 Source: calculation by this server using the WCAG 2.2 formulas (contrast ratio, relative luminance).",
+    "aria": "📜 Source: WAI-ARIA 1.2 Recommendation — NORMATIVE for ARIA, NOT WCAG. MUST/MUST NOT are ARIA requirements; SHOULD/SHOULD NOT are recommendations. ARIA conformance is not WCAG conformance: report a WCAG failure only against a WCAG criterion from get().",
+    "calc":"🧮 Source: calculation by this server using the WCAG 2.2 formulas (contrast ratio, relative luminance).",
     "graph": "🕸 Source: relation graph derived from W3C data — navigation aid, not normative.",
-    "search": "🔎 Search results mix levels: SC = normative, Understanding/techniques = informative. Open the item with get()/get_technique() before citing it.",
+    "search": "🔎 Search results mix levels: SC = normative, Understanding/techniques = informative. Open the item with get()/get_technique()/get_aria() before citing it.",
 }
 
 
@@ -824,6 +832,14 @@ def _indent(text, prefix):
 
 def _source(kind):
     return f"*{SOURCE_LABELS[kind]}*"
+
+
+# Kryteria, przy których model ocenia nazwę dostępną — odsyłacz do norm ARIA,
+# żeby nie pomijał zalecenia dla aria-label (pomiar: bez odsyłacza 2–3/10 prób).
+SC_ARIA_LINKS = {
+    "2.5.3": '📜 ARIA: if the component uses aria-label or aria-labelledby, check get_aria("aria-label") / get_aria("aria-labelledby") — separate ARIA recommendation, not WCAG.',
+    "4.1.2": '📜 ARIA: if the name or role comes from ARIA, check get_aria(<role or attribute>), e.g. get_aria("aria-label") — separate ARIA requirements, not WCAG.',
+}
 
 
 LIST_KIND_HEADINGS = {
@@ -880,7 +896,9 @@ mcp = FastMCP(
         "not WCAG). Base a failure only on normative text from get(); respect "
         "whether its list is AND, OR, exceptions or scope, and never add "
         "exceptions that get() does not list. A failure technique (F) may map "
-        "to several criteria — check get_technique(id, sc=...) before citing."
+        "to several criteria — check get_technique(id, sc=...) before citing. "
+        "For roles, states and properties use get_aria(); keep ARIA "
+        "recommendations (SHOULD NOT) separate from WCAG failures."
     ),
     json_response=True,
     # Bez tego FastMCP trzyma sesję w pamięci procesu i po restarcie kontenera
@@ -941,6 +959,8 @@ def get(identifier: str) -> str:
     lines.append("")
     lines.append(f'💡 Objaśnienie i przykłady: get_understanding("{sc["id"]}")')
     lines.append(f'🔧 Techniki: get_techniques("{sc["id"]}")')
+    if sc["id"] in SC_ARIA_LINKS:
+        lines.append(SC_ARIA_LINKS[sc["id"]])
     lines.append("")
     lines.append(f"📖 [View on W3C]({sc.get('w3c_url', '#')})")
 
@@ -1452,11 +1472,12 @@ def _list_patterns() -> str:
 # Wagi bm25 kolumn indeksu: id, type, title, title_pl, level, category, text
 _BM25 = "bm25(docs, 5.0, 0.0, 10.0, 10.0, 0.0, 0.0, 1.0)"
 _FTS_STRIP = re.compile(r"[^\w-]+", re.UNICODE)
-_SEARCH_LIMITS = {"sc": 8, "definition": 4, "technique": 8}
+_SEARCH_LIMITS = {"sc": 8, "definition": 4, "technique": 8, "aria": 4}
 _SEARCH_HEADINGS = {
     "sc": ("🎯", "Kryteria sukcesu"),
     "definition": ("📖", "Definicje"),
     "technique": ("🔧", "Techniki i błędy"),
+    "aria": ("📜", "WAI-ARIA 1.2 — normatywne dla ARIA, nie WCAG (get_aria)"),
 }
 
 
@@ -1496,6 +1517,12 @@ def _fts_query(raw):
     """Zamień zapytanie użytkownika na bezpieczne wyrażenie FTS5 (prefiksowe OR)."""
     words = [w for w in _FTS_STRIP.sub(" ", raw).split() if len(w) > 1]
     return " OR ".join(f'"{w}"*' for w in words)
+
+
+def _mentions_aria(query):
+    words = {w.lower() for w in _FTS_STRIP.sub(" ", query).split()}
+    return any(w.startswith("aria") or w in ARIA["roles"] or w in ARIA["attributes"]
+               for w in words)
 
 
 def _search_fallback(query, started_at):
@@ -1587,7 +1614,11 @@ def search(query: str) -> str:
     if GRAPH is not None and buckets["technique"]:
         buckets["sc"] = _boost_with_techniques(buckets["sc"], buckets["technique"])[:_SEARCH_LIMITS["sc"]]
 
-    total = sum(len(b) for b in buckets.values())
+    # ARIA only when the query is about ARIA — otherwise "contrast" brings up role=log.
+    if not _mentions_aria(q):
+        buckets["aria"] = []
+
+    total =sum(len(b) for b in buckets.values())
     elapsed_ms = (time.time() - started_at) * 1000
     lines = [f'# Search: "{query}" — {total} matches ({elapsed_ms:.0f}ms)', _source("search")]
 
@@ -1625,6 +1656,7 @@ def status() -> str:
         f"**Understanding Docs:** {COUNTS['understanding']}\n"
         f"**Categories:** {COUNTS.get('categories', 0)}\n"
         f"**Patterns:** {COUNTS.get('patterns', 0)}\n"
+        f"**ARIA roles / states and properties:** {ARIA['counts'].get('roles', 0)} / {ARIA['counts'].get('attributes', 0)}\n"
         f"**Data size:** {os.path.getsize(DATA_PATH) / 1024:.0f} KB\n"
         f"\n"
         f"### Tools\n"
@@ -1640,8 +1672,92 @@ def status() -> str:
         f"- `graph_query(entity)` — Query graph; without entity lists categories\n"
         f"- `graph_between(entity_a, entity_b)` — Find connections between two entities\n"
         f"- `get_pattern(name)` — Development pattern; without name lists patterns\n"
+        f"- `get_aria(name)` — WAI-ARIA 1.2 role, state or property; without name lists them\n"
         f"- `status()` — This status message"
     )
+
+
+ARIA_KEYWORD_MEANING = {
+    "MUST": "requirement", "MUST NOT": "requirement", "SHALL": "requirement",
+    "SHALL NOT": "requirement", "REQUIRED": "requirement",
+    "SHOULD": "recommendation", "SHOULD NOT": "recommendation",
+    "RECOMMENDED": "recommendation", "NOT RECOMMENDED": "recommendation",
+    "MAY": "optional", "OPTIONAL": "optional",
+}
+
+# Ściągi „warunek → werdykt” dla atrybutów, przy których modele najczęściej
+# mylą zalecenie ARIA z błędem WCAG. Każda linia wynika z normy ARIA albo
+# z tekstu normatywnego WCAG i techniki F przypisanej do tego kryterium.
+ARIA_VERDICTS = {
+    "aria-label": [
+        "Element has visible text (in the DOM) AND aria-label → the ARIA recommendation is not followed (SHOULD NOT). This alone is NOT a WCAG failure.",
+        "aria-label does NOT contain the visible label text → WCAG 2.5.3 Label in Name fails (normative text; failure F96).",
+        "aria-label contains the visible text, but not at the start → 2.5.3 is met; label-first is only an informative note.",
+        "No visible text (e.g. icon button) → aria-label is allowed (MAY); check that the name describes the purpose (4.1.2).",
+    ],
+}
+
+ARIA_GENERIC_VERDICT = (
+    "Not following an ARIA SHOULD/SHOULD NOT is an ARIA recommendation issue, not a "
+    "WCAG failure. Report a WCAG failure only when a criterion's normative text "
+    "from get() is not met."
+)
+
+
+@mcp.tool()
+def get_aria(name: str = "") -> str:
+    """
+    Get a WAI-ARIA 1.2 role, state or property from the W3C Recommendation.
+
+    Returns the definition, its RFC 2119 statements (MUST, SHOULD NOT…)
+    marked as requirement or recommendation, and the characteristics table.
+    Without a name lists all roles, states and properties.
+    Examples: "aria-label", "label", "button", "aria-hidden"
+    """
+    raw = str(name).strip().lower()
+    if not raw:
+        return _list_aria()
+    entry = ARIA["roles"].get(raw) or ARIA["attributes"].get(raw) \
+        or ARIA["attributes"].get(f"aria-{raw}")
+    if not entry:
+        return f"'{name}' not found in WAI-ARIA 1.2. Call get_aria() to list roles, states and properties."
+
+    kind = entry["kind"]
+    if entry.get("abstract"):
+        kind = "abstract role — authors MUST NOT use it in content"
+    lines = [f"# {entry['name']} ({kind})", _source("aria"), ""]
+    if entry["rfc"]:
+        lines.append("## Requirements (RFC 2119)")
+        for st in entry["rfc"]:
+            meaning = ARIA_KEYWORD_MEANING.get(st["keyword"], "")
+            lines.append(f"- **{st['keyword']}** ({meaning}): {st['text']}")
+        lines.append("")
+    verdicts = ARIA_VERDICTS.get(entry["name"])
+    if verdicts or any(st["keyword"].startswith("SHOULD") for st in entry["rfc"]):
+        lines.append("## How to judge (condition → verdict)")
+        lines += [f"- {v}" for v in verdicts or []]
+        lines += [f"- {ARIA_GENERIC_VERDICT}", ""]
+    lines += ["## Definition", entry["description_md"], ""]
+    if entry["characteristics"]:
+        lines.append("## Characteristics")
+        lines += [f"- **{k}:** {v}" for k, v in entry["characteristics"].items()]
+        lines.append("")
+    lines.append(f"📖 [View on W3C]({entry['url']})")
+    return "\n".join(lines)
+
+
+def _list_aria() -> str:
+    roles = sorted(r for r, e in ARIA["roles"].items() if not e.get("abstract"))
+    abstract = sorted(r for r, e in ARIA["roles"].items() if e.get("abstract"))
+    attrs = sorted(ARIA["attributes"])
+    return "\n".join([
+        "# WAI-ARIA 1.2 — roles, states and properties",
+        _source("aria"),
+        "",
+        f"## Roles ({len(roles)})", ", ".join(roles), "",
+        f"## Abstract roles — not for authors ({len(abstract)})", ", ".join(abstract), "",
+        f"## States and properties ({len(attrs)})", ", ".join(attrs),
+    ])
 
 
 # ─── Graph tools ───

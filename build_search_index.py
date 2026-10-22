@@ -9,6 +9,8 @@ Indexes four kinds of documents into a single FTS5 table:
   definition  glossary terms
   technique   techniques and failures — id, category, applied SCs and the
               technique body
+  aria        WAI-ARIA 1.2 roles, states and properties — RFC 2119
+              statements and definition (from aria-data.json, if present)
 
 The Polish titles are read straight out of server.py so there is one source of
 truth for them. Queries therefore work in both languages.
@@ -27,6 +29,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).parent
 DATA = ROOT / "wcag-data.json"
+ARIA_DATA = ROOT / "aria-data.json"
 SERVER = ROOT / "server.py"
 INDEX_DIR = ROOT / "embeddings"
 
@@ -133,6 +136,17 @@ def build():
             add(tid, "technique", tid, "", "", tech.get("category", ""), text)
             n_tech += 1
 
+    # ── WAI-ARIA 1.2 roles, states and properties (build_aria.py) ──
+    n_aria = 0
+    if ARIA_DATA.exists():
+        aria = json.loads(ARIA_DATA.read_text(encoding="utf-8"))
+        for entry in [*aria["roles"].values(), *aria["attributes"].values()]:
+            rfc = " ".join(f"{st['keyword']}: {st['text']}" for st in entry["rfc"])
+            parts = [entry["name"], entry["kind"], rfc, strip_markdown(entry["description_md"])]
+            add(entry["name"], "aria", entry["name"], "", "", entry["kind"],
+                "\n".join(p for p in parts if p))
+            n_aria += 1
+
     conn.commit()
     conn.execute("INSERT INTO docs(docs) VALUES('optimize')")
     conn.commit()
@@ -147,6 +161,7 @@ def build():
     print(f"  SCs:         {n_sc}")
     print(f"  Definitions: {n_def}")
     print(f"  Techniques:  {n_tech}")
+    print(f"  ARIA:        {n_aria}")
     print(f"  Written:     {db_path} ({size_kb:.0f} KB)")
 
 

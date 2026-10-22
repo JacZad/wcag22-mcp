@@ -2,6 +2,16 @@
 
 Format oparty na [Keep a Changelog](https://keepachangelog.com/pl/1.1.0/), wersjonowanie według [SemVer](https://semver.org/lang/pl/). Do wersji 1.0 zmiana drugiej cyfry może oznaczać niekompatybilne zmiany w narzędziach.
 
+## [0.4.0] — 2026-10-22
+
+### Dodane
+
+- `get_aria(name)` — rola, stan lub właściwość z rekomendacji WAI-ARIA 1.2 (94 role, 48 stanów i właściwości). Zdania z MUST, SHOULD NOT itd. są wyciągnięte osobno i oznaczone jako wymaganie, zalecenie albo opcja. Etykieta źródła przypomina, że zgodność z ARIA to nie zgodność z WCAG. Bez argumentu zwraca listę.
+- Sekcja „How to judge” w `get_aria` — warunek → werdykt; dla `aria-label` łączy zalecenie ARIA z 2.5.3 i F96.
+- `get("2.5.3")` i `get("4.1.2")` odsyłają do `get_aria`.
+- `search()` zwraca role i atrybuty ARIA, ale tylko gdy zapytanie dotyczy ARIA (słowo „aria” albo nazwa roli lub atrybutu).
+- `build_aria.py` — buduje `aria-data.json` ze specyfikacji W3C zapisanej w `aria-src/` (ignorowany przez git).
+
 ## [0.3.0] — 2026-10-15
 
 ### Dodane

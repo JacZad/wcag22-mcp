@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Kod serwera + gotowe dane (pre-built, bez przebudowy w obrazie)
 COPY server.py smoke_test.py ./
-COPY wcag-data.json .
+COPY wcag-data.json aria-data.json ./
 # Indeks FTS5 — bez niego search() spada do trybu awaryjnego
 COPY embeddings/search.db ./embeddings/search.db
 

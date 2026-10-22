@@ -17,5 +17,6 @@ wcag-html/
 
 # Embedded repo
 wcag-repo/
+aria-src/
 
 calls.jsonl*

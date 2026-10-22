@@ -189,8 +189,9 @@ Serwer udostępnia następujące narzędzia MCP:
 | `get_full_understanding(identifier)` | Pełny dokument Understanding W3C (5–40 KB) — tylko na wyraźną prośbę |
 | `list_scs(level)` | Lista SC, opcjonalnie filtrowana (`"A"`, `"AA"`, `"AAA"`) |
 | `check_contrast(fg, bg)` | Kalkulator kontrastu WCAG (hex) |
-| `search(query)` | Wyszukiwanie pełnotekstowe FTS5 (kryteria, definicje, techniki; PL i EN) |
+| `search(query)` | Wyszukiwanie pełnotekstowe FTS5 (kryteria, definicje, techniki, ARIA; PL i EN) |
 | `get_pattern(name)` | Wzorzec ARIA APG (np. `"combobox"`, `"dialog"`); bez nazwy — lista wzorców |
+| `get_aria(name)` | Rola, stan lub właściwość z normy WAI-ARIA 1.2 (np. `"aria-label"`, `"button"`), ze zdaniami MUST/SHOULD NOT; bez nazwy — lista |
 | `graph_query(entity)` | Zapytanie do grafu wiedzy; bez argumentu — kategorie tematyczne |
 | `graph_between(a, b)` | Połączenia między dwoma encjami w grafie |
 | `status()` | Wersja serwera, statystyki danych i stan podsystemów |
